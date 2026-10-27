@@ -1,14 +1,21 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { setTimeout as delay } from 'node:timers/promises'
 import { intFlag, parseArgs } from './args.ts'
-import { readFileBytes } from './io.ts'
+import { readFileBytes, writeJson } from './io.ts'
+import { baselineCommand } from './baseline.ts'
+import { BASELINE_RANKS } from '../core/signals/constants.ts'
 import { dumpFile, formatDump } from './dump.ts'
 import { createTmxClient } from './tmx.ts'
 import { fetchCommand, type FetchFs } from './fetch.ts'
+import { analyzeCommand } from './analyze.ts'
+import { formatReport } from './format-report.ts'
+import type { Baseline } from '../core/signals/types.ts'
 
 const USAGE = `usage:
   dump <file> [--json] [--events N]
   fetch (--map <tmxMapId> [--count N] [--uploads] | --ghost <uuid> | --search <name>) --out <dir>
+  analyze <file|dir>... [--json] [--baseline <file>]
+  baseline <dir> --out <file> [--ranks lo:hi]
 `
 
 const USER_AGENT = 'tm2020-tracker/0.1 (+https://github.com/grubekevin/tm2020-tracker)'
@@ -55,6 +62,40 @@ async function main(argv: string[]): Promise<number> {
         () => delay(DOWNLOAD_DELAY_MS),
       )
       process.stdout.write(lines.join('\n') + (lines.length ? '\n' : ''))
+      return 0
+    }
+    case 'analyze': {
+      if (args.positionals.length === 0) {
+        process.stderr.write(USAGE)
+        return 2
+      }
+      const baseline =
+        typeof args.flags.baseline === 'string'
+          ? (JSON.parse(readFileSync(args.flags.baseline, 'utf8')) as Baseline)
+          : null
+      const report = await analyzeCommand(args.positionals, baseline)
+      process.stdout.write(
+        args.flags.json ? JSON.stringify(report, null, 2) + '\n' : formatReport(report),
+      )
+      const failed = report.files.filter(
+        (f) => f.signals[0]?.applicable === false && f.login === '',
+      )
+      return failed.length === report.files.length ? 1 : 0
+    }
+    case 'baseline': {
+      const dir = args.positionals[0]
+      const out = args.flags.out
+      if (!dir || typeof out !== 'string') {
+        process.stderr.write(USAGE)
+        return 2
+      }
+      const ranksFlag = typeof args.flags.ranks === 'string' ? args.flags.ranks : null
+      const ranks: [number, number] = ranksFlag
+        ? (ranksFlag.split(':').map((x) => Number.parseInt(x, 10)) as [number, number])
+        : BASELINE_RANKS
+      const baseline = await baselineCommand(dir, { ranks })
+      writeJson(out, baseline)
+      process.stdout.write(`${baseline.files} files -> ${out}\n`)
       return 0
     }
     default:
