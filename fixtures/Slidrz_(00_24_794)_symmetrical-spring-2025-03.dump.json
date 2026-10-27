@@ -1,0 +1,300 @@
+{
+  "kind": "ghost",
+  "replay": null,
+  "warnings": [],
+  "ghosts": [
+    {
+      "nickname": "Slidrz",
+      "login": "u8IfOUGVSWOUnBrRSa-lFg",
+      "zone": "World|Europe|United Kingdom",
+      "clubTag": "$W$300R$600N$900G",
+      "trigram": "A C",
+      "recordingContext": "",
+      "playerModel": {
+        "id": "CarSport",
+        "collection": "10003",
+        "author": "Nadeo"
+      },
+      "mapUid": "y7199pHac9eQCtl0GUwCUDR60Ha",
+      "ghostUid": "101879675",
+      "raceTimeMs": 24794,
+      "respawns": 0,
+      "checkpoints": [
+        {
+          "timeMs": 6667,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 12128,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 17482,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 21350,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 23667,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 24794,
+          "stuntsScore": 0
+        }
+      ],
+      "ghostVersion": 8,
+      "wallTime": {
+        "startUnixSec": 1754498149,
+        "endUnixSec": 1754498174,
+        "source": "02C"
+      },
+      "validation": {
+        "exeVersion": "Trackmania date=2025-07-04_14_15 git=127535-ebc2b176b45 GameVersion=3.3.0",
+        "exeChecksum": 2921432346,
+        "osKind": 14,
+        "cpuKind": 5,
+        "titleId": "Trackmania",
+        "validationSeed": 26593895,
+        "raceSettings": "Openplanet 1.27.12 (next, Public, 2025-07-01)"
+      },
+      "inputs": [
+        {
+          "version": 12,
+          "u01": 0,
+          "startOffsetMs": 0,
+          "ticks": 2480,
+          "data": {
+            "length": 2119,
+            "sha256": "303f883d65ad91eba2183410a5978662b19b918a6755aaf83fca61e84ccf7d42"
+          }
+        }
+      ],
+      "recordData": {
+        "version": 10,
+        "uncompressedSize": 74927,
+        "compressed": {
+          "length": 29113,
+          "sha256": "770d9eead9e8fe0480dd10a7f1b0ec1c443d491894e6e74c5f262622eaa0a365"
+        }
+      },
+      "rawChunks": {
+        "0x0309200a": {
+          "length": 4,
+          "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+        },
+        "0x0309201b": {
+          "length": 42,
+          "sha256": "46fb3eaf064060201f8a3e4c1d7fe534fe67fb3b1759b8d4a05be042856bc70f"
+        },
+        "0x03092022": {
+          "length": 8,
+          "sha256": "f0a0278e4372459cca6159cd5e71cfee638302a7b9ca9b05c34181ac0a65ac5d"
+        },
+        "0x03092023": {
+          "length": 47,
+          "sha256": "b86cf347e19742d99ddf7ec5e92500f1ec7de3932bba2a639dfd28f7b3c6184c"
+        },
+        "0x03092024": {
+          "length": 8,
+          "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+        },
+        "0x03092025": {
+          "length": 170,
+          "sha256": "44895130f90d9c76af346123ce464413de2db5dc0dbd0644667ab2700e6041f5"
+        },
+        "0x03092026": {
+          "length": 16,
+          "sha256": "3f11c97560d73a9617f8eb27fc42b54b4a20bf04aef802744457c275529b1938"
+        },
+        "0x03092027": {
+          "length": 16,
+          "sha256": "6b6f14e6af2627186bf8a55e474dcf6ef3f6ce81af560da871ec51eb670171a9"
+        },
+        "0x03092028": {
+          "length": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "0x03092029": {
+          "length": 20,
+          "sha256": "9e4b48157507ccb6d544fb0728cb7b6ce6c73ceeea09d50f07303256d4119210"
+        },
+        "0x0309202a": {
+          "length": 8,
+          "sha256": "4c7812db2251d6d2ab2967e8ba80496c477f5e0c592cacd629ede02e1df33e4d"
+        },
+        "0x0309202b": {
+          "length": 76,
+          "sha256": "3b3d86efd22834989aa8e55f00f881d37919847ff0639da99f52da641ac41dea"
+        },
+        "0x0309202e": {
+          "length": 4,
+          "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+        }
+      },
+      "unknownChunks": [
+        "0x0309200a",
+        "0x0309201b",
+        "0x03092024",
+        "0x03092025",
+        "0x03092026",
+        "0x03092027",
+        "0x03092028",
+        "0x03092029",
+        "0x0309202a",
+        "0x0309202b",
+        "0x0309202e"
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "ticks": 2480,
+      "startOffsetMs": 0,
+      "eventCount": 946,
+      "firstEvents": [
+        {
+          "tick": 0,
+          "timeMs": 0,
+          "kind": "mouse",
+          "value": 4574,
+          "value2": 65409
+        },
+        {
+          "tick": 0,
+          "timeMs": 0,
+          "kind": "steer",
+          "value": 18
+        },
+        {
+          "tick": 0,
+          "timeMs": 0,
+          "kind": "gas",
+          "value": 1
+        },
+        {
+          "tick": 57,
+          "timeMs": 570,
+          "kind": "steer",
+          "value": 19
+        },
+        {
+          "tick": 61,
+          "timeMs": 610,
+          "kind": "steer",
+          "value": 21
+        },
+        {
+          "tick": 62,
+          "timeMs": 620,
+          "kind": "steer",
+          "value": 26
+        },
+        {
+          "tick": 63,
+          "timeMs": 630,
+          "kind": "steer",
+          "value": 28
+        },
+        {
+          "tick": 64,
+          "timeMs": 640,
+          "kind": "steer",
+          "value": 30
+        },
+        {
+          "tick": 66,
+          "timeMs": 660,
+          "kind": "steer",
+          "value": 35
+        },
+        {
+          "tick": 67,
+          "timeMs": 670,
+          "kind": "steer",
+          "value": 38
+        },
+        {
+          "tick": 68,
+          "timeMs": 680,
+          "kind": "steer",
+          "value": 39
+        },
+        {
+          "tick": 69,
+          "timeMs": 690,
+          "kind": "steer",
+          "value": 41
+        },
+        {
+          "tick": 71,
+          "timeMs": 710,
+          "kind": "steer",
+          "value": 42
+        },
+        {
+          "tick": 72,
+          "timeMs": 720,
+          "kind": "steer",
+          "value": 43
+        },
+        {
+          "tick": 76,
+          "timeMs": 760,
+          "kind": "steer",
+          "value": 41
+        },
+        {
+          "tick": 77,
+          "timeMs": 770,
+          "kind": "steer",
+          "value": 37
+        },
+        {
+          "tick": 79,
+          "timeMs": 790,
+          "kind": "steer",
+          "value": 33
+        },
+        {
+          "tick": 81,
+          "timeMs": 810,
+          "kind": "steer",
+          "value": 29
+        },
+        {
+          "tick": 82,
+          "timeMs": 820,
+          "kind": "steer",
+          "value": 28
+        },
+        {
+          "tick": 83,
+          "timeMs": 830,
+          "kind": "steer",
+          "value": 27
+        }
+      ]
+    }
+  ],
+  "samples": {
+    "count": 496,
+    "firstTimeMs": 0,
+    "lastTimeMs": 24750
+  },
+  "unknownChunks": [
+    "0x0309200a",
+    "0x0309201b",
+    "0x03092024",
+    "0x03092025",
+    "0x03092026",
+    "0x03092027",
+    "0x03092028",
+    "0x03092029",
+    "0x0309202a",
+    "0x0309202b",
+    "0x0309202e"
+  ]
+}

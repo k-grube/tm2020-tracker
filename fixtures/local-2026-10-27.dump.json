@@ -1,0 +1,304 @@
+{
+  "kind": "replay",
+  "replay": {
+    "version": 8,
+    "mapInfo": {
+      "id": "ypPmohQofd72MyTsIsijKfrJH98",
+      "collection": "16",
+      "author": "Nadeo"
+    },
+    "timeMs": 21278,
+    "nickname": "zifu_",
+    "login": "KrE23CqvT8-wmr21pF5rqQ",
+    "titleId": "TMStadium"
+  },
+  "warnings": [
+    "stopped before chunk 0x03093015, 13782 bytes unread"
+  ],
+  "ghosts": [
+    {
+      "nickname": "zifu_",
+      "login": "KrE23CqvT8-wmr21pF5rqQ",
+      "zone": "World|North America|United States",
+      "clubTag": "",
+      "trigram": "ZIF",
+      "recordingContext": "",
+      "playerModel": {
+        "id": "CarSport",
+        "collection": "10003",
+        "author": "Nadeo"
+      },
+      "mapUid": "ypPmohQofd72MyTsIsijKfrJH98",
+      "ghostUid": "615315754",
+      "raceTimeMs": 21278,
+      "respawns": 0,
+      "checkpoints": [
+        {
+          "timeMs": 5492,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 12262,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 16045,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 21278,
+          "stuntsScore": 0
+        }
+      ],
+      "ghostVersion": 8,
+      "wallTime": {
+        "startUnixSec": 1793141627,
+        "endUnixSec": 1793141648,
+        "source": "02C"
+      },
+      "validation": {
+        "exeVersion": "Trackmania date=2026-02-02_17_51 git=128149-c7d05ad2551 GameVersion=3.3.0",
+        "exeChecksum": 1623925506,
+        "osKind": 14,
+        "cpuKind": 6,
+        "titleId": "Trackmania",
+        "validationSeed": 29453664,
+        "raceSettings": "Openplanet 1.29.14 (next, Public, 6fd4200f)"
+      },
+      "inputs": [
+        {
+          "version": 12,
+          "u01": 0,
+          "startOffsetMs": 0,
+          "ticks": 2428,
+          "data": {
+            "length": 1543,
+            "sha256": "a5792e76020cf437ec3b1bf83075dc488096c8bc1f4a53f1a06f9db5917dfdf6"
+          }
+        }
+      ],
+      "recordData": {
+        "version": 11,
+        "uncompressedSize": 67259,
+        "compressed": {
+          "length": 11667,
+          "sha256": "bd5cb42aca33dccbb299639bbf2856bf1ff76f6487cedfb44101ebccb91a4a07"
+        }
+      },
+      "rawChunks": {
+        "0x0309200a": {
+          "length": 4,
+          "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+        },
+        "0x0309201b": {
+          "length": 34,
+          "sha256": "15d2ce6716a6f9f736d3e97723be59f6a2c68f83d5fc6ede81cc6a8cdc918816"
+        },
+        "0x03092022": {
+          "length": 8,
+          "sha256": "f0a0278e4372459cca6159cd5e71cfee638302a7b9ca9b05c34181ac0a65ac5d"
+        },
+        "0x03092023": {
+          "length": 47,
+          "sha256": "0f85127e19294f0a4add5cfbb0aade608f37437c9d56cf403c6077baa26a516b"
+        },
+        "0x03092024": {
+          "length": 8,
+          "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+        },
+        "0x03092025": {
+          "length": 168,
+          "sha256": "d7f7f7c084e0019fcf35b24091ab3016a7e89a73b471482b59d5aceb3a476d51"
+        },
+        "0x03092026": {
+          "length": 16,
+          "sha256": "46002aa9747515107c95664eff22d62db5ccb2ea9dbc97e2eb997e442185879e"
+        },
+        "0x03092027": {
+          "length": 16,
+          "sha256": "6b6f14e6af2627186bf8a55e474dcf6ef3f6ce81af560da871ec51eb670171a9"
+        },
+        "0x03092028": {
+          "length": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "0x03092029": {
+          "length": 20,
+          "sha256": "9e4b48157507ccb6d544fb0728cb7b6ce6c73ceeea09d50f07303256d4119210"
+        },
+        "0x0309202a": {
+          "length": 8,
+          "sha256": "26a0ff4b6290ab7e7f29102e0381dddd5609ca4f52142f47919dddef013568fd"
+        },
+        "0x0309202b": {
+          "length": 60,
+          "sha256": "de3e143bf7680c16852f30f70cb07a4c83625b70a12b0f4effbc359939ea2504"
+        },
+        "0x0309202e": {
+          "length": 4,
+          "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+        }
+      },
+      "unknownChunks": [
+        "0x0309200a",
+        "0x0309201b",
+        "0x03092024",
+        "0x03092025",
+        "0x03092026",
+        "0x03092027",
+        "0x03092028",
+        "0x03092029",
+        "0x0309202a",
+        "0x0309202b",
+        "0x0309202e"
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "ticks": 2428,
+      "startOffsetMs": 0,
+      "eventCount": 499,
+      "firstEvents": [
+        {
+          "tick": 0,
+          "timeMs": 0,
+          "kind": "gas",
+          "value": 1
+        },
+        {
+          "tick": 266,
+          "timeMs": 2660,
+          "kind": "steer",
+          "value": -1
+        },
+        {
+          "tick": 268,
+          "timeMs": 2680,
+          "kind": "steer",
+          "value": -2
+        },
+        {
+          "tick": 273,
+          "timeMs": 2730,
+          "kind": "steer",
+          "value": -3
+        },
+        {
+          "tick": 274,
+          "timeMs": 2740,
+          "kind": "steer",
+          "value": -4
+        },
+        {
+          "tick": 275,
+          "timeMs": 2750,
+          "kind": "steer",
+          "value": -5
+        },
+        {
+          "tick": 276,
+          "timeMs": 2760,
+          "kind": "steer",
+          "value": -6
+        },
+        {
+          "tick": 277,
+          "timeMs": 2770,
+          "kind": "steer",
+          "value": -7
+        },
+        {
+          "tick": 279,
+          "timeMs": 2790,
+          "kind": "steer",
+          "value": -8
+        },
+        {
+          "tick": 281,
+          "timeMs": 2810,
+          "kind": "steer",
+          "value": -10
+        },
+        {
+          "tick": 283,
+          "timeMs": 2830,
+          "kind": "steer",
+          "value": -11
+        },
+        {
+          "tick": 285,
+          "timeMs": 2850,
+          "kind": "steer",
+          "value": -13
+        },
+        {
+          "tick": 287,
+          "timeMs": 2870,
+          "kind": "steer",
+          "value": -14
+        },
+        {
+          "tick": 289,
+          "timeMs": 2890,
+          "kind": "steer",
+          "value": -15
+        },
+        {
+          "tick": 301,
+          "timeMs": 3010,
+          "kind": "steer",
+          "value": -16
+        },
+        {
+          "tick": 302,
+          "timeMs": 3020,
+          "kind": "steer",
+          "value": -17
+        },
+        {
+          "tick": 303,
+          "timeMs": 3030,
+          "kind": "steer",
+          "value": -19
+        },
+        {
+          "tick": 304,
+          "timeMs": 3040,
+          "kind": "steer",
+          "value": -21
+        },
+        {
+          "tick": 305,
+          "timeMs": 3050,
+          "kind": "steer",
+          "value": -24
+        },
+        {
+          "tick": 307,
+          "timeMs": 3070,
+          "kind": "steer",
+          "value": -27
+        }
+      ]
+    }
+  ],
+  "samples": {
+    "count": 486,
+    "firstTimeMs": 0,
+    "lastTimeMs": 24250
+  },
+  "unknownChunks": [
+    "0x0309200a",
+    "0x0309201b",
+    "0x03092024",
+    "0x03092025",
+    "0x03092026",
+    "0x03092027",
+    "0x03092028",
+    "0x03092029",
+    "0x0309202a",
+    "0x0309202b",
+    "0x0309202e"
+  ]
+}

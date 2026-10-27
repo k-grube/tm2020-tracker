@@ -1,0 +1,339 @@
+{
+  "kind": "replay",
+  "replay": {
+    "version": 8,
+    "mapInfo": {
+      "id": "RXEhmRhMZN8LGlKPfMaecAM871f",
+      "collection": "26",
+      "author": "CF4dJH1VSW2teh6x7-wJ6w"
+    },
+    "timeMs": 78321,
+    "nickname": "That_Ski_Freak",
+    "login": "2tuvKOe1Qpu_N4yMFBn89A",
+    "titleId": "Trackmania"
+  },
+  "warnings": [
+    "stopped before chunk 0x03093015, 439 bytes unread"
+  ],
+  "ghosts": [
+    {
+      "nickname": "That_Ski_Freak",
+      "login": "2tuvKOe1Qpu_N4yMFBn89A",
+      "zone": "World|North America|United States",
+      "clubTag": null,
+      "trigram": "SKI",
+      "recordingContext": "PersonalBest_TimeAttack",
+      "playerModel": {
+        "id": "CarSport",
+        "collection": "10003",
+        "author": "Nadeo"
+      },
+      "mapUid": "RXEhmRhMZN8LGlKPfMaecAM871f",
+      "ghostUid": "784956840",
+      "raceTimeMs": 78321,
+      "respawns": -1,
+      "checkpoints": [
+        {
+          "timeMs": 11626,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 18271,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 24301,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 28093,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 31061,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 35910,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 42788,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 48128,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 56488,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 60917,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 66027,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 68195,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 73670,
+          "stuntsScore": 0
+        },
+        {
+          "timeMs": 78321,
+          "stuntsScore": 0
+        }
+      ],
+      "ghostVersion": 8,
+      "wallTime": {
+        "startUnixSec": 1644819350,
+        "endUnixSec": 1644819430,
+        "source": "02C"
+      },
+      "validation": {
+        "exeVersion": "Trackmania date=2022-01-21_15_54 git=105900-6a6c3d990d2 GameVersion=3.3.0",
+        "exeChecksum": 726787968,
+        "osKind": 14,
+        "cpuKind": 6,
+        "titleId": "Trackmania",
+        "validationSeed": 0,
+        "raceSettings": ""
+      },
+      "inputs": [
+        {
+          "version": 12,
+          "u01": 902820,
+          "startOffsetMs": -1580,
+          "ticks": 7991,
+          "data": {
+            "length": 7877,
+            "sha256": "daad4226055bddf85cd7faa3e69624bdfdcdde3e2428a6bf9620e67e08039ffd"
+          }
+        }
+      ],
+      "recordData": {
+        "version": 10,
+        "uncompressedSize": 224035,
+        "compressed": {
+          "length": 93814,
+          "sha256": "77d9baecf092568c9eee0ecacbb572df72326bd81440d3ce821118843774a430"
+        }
+      },
+      "rawChunks": {
+        "0x0309200a": {
+          "length": 4,
+          "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+        },
+        "0x0309201b": {
+          "length": 74,
+          "sha256": "4af76bfc262dcc748256d68a92ca4fef03dcb50510ca35369986a0a12cf059f4"
+        },
+        "0x03092022": {
+          "length": 8,
+          "sha256": "f0a0278e4372459cca6159cd5e71cfee638302a7b9ca9b05c34181ac0a65ac5d"
+        },
+        "0x03092023": {
+          "length": 47,
+          "sha256": "0f85127e19294f0a4add5cfbb0aade608f37437c9d56cf403c6077baa26a516b"
+        },
+        "0x03092024": {
+          "length": 8,
+          "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+        },
+        "0x03092025": {
+          "length": 125,
+          "sha256": "98e394c8ab3167fd4a9f1b4b53d84224a71c6426209ef692f7ff9844fa59c2ff"
+        },
+        "0x03092026": {
+          "length": 16,
+          "sha256": "163df029e89e0674d0e206711dc0720067f98a7f1509a1d2b5000d74e0fb57dc"
+        },
+        "0x03092027": {
+          "length": 16,
+          "sha256": "6b6f14e6af2627186bf8a55e474dcf6ef3f6ce81af560da871ec51eb670171a9"
+        },
+        "0x03092028": {
+          "length": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "0x03092029": {
+          "length": 30,
+          "sha256": "faeacaec31cf2dcf597057962b3646c3d676f30edcdcba7f80c4fae698164c7d"
+        },
+        "0x0309202a": {
+          "length": 8,
+          "sha256": "828c68ec8aac70ba0ca148198551859a17558762c78a7499d4b2adb7f6ef6d4a"
+        },
+        "0x0309202b": {
+          "length": 140,
+          "sha256": "dd1c078d40e4b1971b052d5a1576462dd3943e119737f8f4a96f214a5693e32b"
+        }
+      },
+      "unknownChunks": [
+        "0x0309200a",
+        "0x0309201b",
+        "0x03092024",
+        "0x03092025",
+        "0x03092026",
+        "0x03092027",
+        "0x03092028",
+        "0x03092029",
+        "0x0309202a",
+        "0x0309202b"
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "ticks": 7991,
+      "startOffsetMs": -1580,
+      "eventCount": 3908,
+      "firstEvents": [
+        {
+          "tick": 0,
+          "timeMs": -1580,
+          "kind": "mouse",
+          "value": 42679,
+          "value2": 47257
+        },
+        {
+          "tick": 1,
+          "timeMs": -1570,
+          "kind": "gas",
+          "value": 1
+        },
+        {
+          "tick": 2,
+          "timeMs": -1560,
+          "kind": "gas",
+          "value": 0
+        },
+        {
+          "tick": 32,
+          "timeMs": -1260,
+          "kind": "gas",
+          "value": 1
+        },
+        {
+          "tick": 156,
+          "timeMs": -20,
+          "kind": "steer",
+          "value": 3
+        },
+        {
+          "tick": 157,
+          "timeMs": -10,
+          "kind": "steer",
+          "value": 5
+        },
+        {
+          "tick": 158,
+          "timeMs": 0,
+          "kind": "steer",
+          "value": 6
+        },
+        {
+          "tick": 159,
+          "timeMs": 10,
+          "kind": "steer",
+          "value": 7
+        },
+        {
+          "tick": 160,
+          "timeMs": 20,
+          "kind": "steer",
+          "value": 9
+        },
+        {
+          "tick": 161,
+          "timeMs": 30,
+          "kind": "steer",
+          "value": 12
+        },
+        {
+          "tick": 162,
+          "timeMs": 40,
+          "kind": "steer",
+          "value": 14
+        },
+        {
+          "tick": 164,
+          "timeMs": 60,
+          "kind": "steer",
+          "value": 16
+        },
+        {
+          "tick": 165,
+          "timeMs": 70,
+          "kind": "steer",
+          "value": 19
+        },
+        {
+          "tick": 166,
+          "timeMs": 80,
+          "kind": "steer",
+          "value": 21
+        },
+        {
+          "tick": 167,
+          "timeMs": 90,
+          "kind": "steer",
+          "value": 26
+        },
+        {
+          "tick": 168,
+          "timeMs": 100,
+          "kind": "steer",
+          "value": 31
+        },
+        {
+          "tick": 169,
+          "timeMs": 110,
+          "kind": "steer",
+          "value": 38
+        },
+        {
+          "tick": 170,
+          "timeMs": 120,
+          "kind": "steer",
+          "value": 43
+        },
+        {
+          "tick": 171,
+          "timeMs": 130,
+          "kind": "steer",
+          "value": 47
+        },
+        {
+          "tick": 172,
+          "timeMs": 140,
+          "kind": "steer",
+          "value": 51
+        }
+      ]
+    }
+  ],
+  "samples": {
+    "count": 1567,
+    "firstTimeMs": 10,
+    "lastTimeMs": 78310
+  },
+  "unknownChunks": [
+    "0x0309200a",
+    "0x0309201b",
+    "0x03092024",
+    "0x03092025",
+    "0x03092026",
+    "0x03092027",
+    "0x03092028",
+    "0x03092029",
+    "0x0309202a",
+    "0x0309202b"
+  ]
+}
