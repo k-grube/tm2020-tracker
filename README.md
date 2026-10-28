@@ -1,24 +1,28 @@
 # tm2020-tracker
 
-Deterministic screening of Trackmania 2020 ghost and replay files for the input and timing signatures seen in the 2026 scandal plus the 2021 slow-motion method. Own Gbx parser, no runtime dependencies in the core, same code in a Node CLI and a static web page.
+Screens Trackmania 2020 ghost and replay files for input and timing patterns that a hand on a controller does not produce. Own Gbx parser, no runtime dependencies in the core, one codebase for the CLI and the web page.
 
-Output never says "cheat". Every signal is a raw measurement next to reference points, the summary line is `needs human review: yes/no`, and a human decides.
+Every signal is a measurement next to its reference range. The summary line is `needs human review: yes/no`.
+
+Page: https://k-grube.github.io/tm2020-tracker/
 
 ## Web page
 
-Drop `.Ghost.Gbx` or `.Replay.Gbx` files on the page. Parsing and analysis run in a Web Worker in the browser, nothing is uploaded. Several files at once get the cross-file signals when they share a map or a login.
+Drop `.Ghost.Gbx` or `.Replay.Gbx` files on the page. Parsing and analysis run in a Web Worker, nothing leaves the browser. Files that share a map or a login get the cross-file signals.
 
-Paste a record uuid, a TMX replay id, or a download url from `trackmania.exchange/getonlinerecord/<uuid>`, `trackmania.exchange/recordgbx/<id>` or `trackmania.io/api/download/ghost/<uuid>`. The url is rebuilt from the id, nothing else is ever fetched. Without a proxy the page links to the download (TMX and trackmania.io send no CORS headers), download that file and drop it. With `VITE_PROXY_URL` set at build time the page fetches it in place through the worker below, a bare uuid is tried on TMX first, then trackmania.io.
+The text field takes a record uuid, a TMX replay id, or a download url from `trackmania.exchange/getonlinerecord/<uuid>`, `trackmania.exchange/recordgbx/<id>` or `trackmania.io/api/download/ghost/<uuid>`. The url is rebuilt from the id. With `VITE_PROXY_URL` set at build time the page fetches the file through the proxy below, otherwise it links to the download.
 
 ### Download proxy
 
-`worker/proxy.js` is a Cloudflare Worker: `GET /?url=<download url>`, allows only `trackmania.exchange/getonlinerecord/*`, `trackmania.exchange/recordgbx/*` and `trackmania.io/api/download/ghost/*`, only from the origins in its `ALLOWED_ORIGINS` variable, and streams the file back with CORS headers. No dependencies, deploy from the dashboard:
+`worker/proxy.js` is a Cloudflare Worker. `GET /?url=<download url>`, hosts and paths limited to the three above, origins limited to `ALLOWED_ORIGINS`, CORS headers added to the response.
 
-1. dash.cloudflare.com, Workers & Pages, Create, Create Worker, name it, Deploy
-2. Edit code, replace the hello world with `worker/proxy.js`, Deploy
-3. Settings, Variables, add `ALLOWED_ORIGINS` = `https://k-grube.github.io,http://localhost:5173`
-4. GitHub repo, Settings, Secrets and variables, Actions, Variables, add `VITE_PROXY_URL` = the worker url
+1. dash.cloudflare.com, Workers & Pages, Create application, Start with Hello World, Deploy
+2. Edit code, paste `worker/proxy.js`, Deploy
+3. Settings, Variables, `ALLOWED_ORIGINS` = `https://k-grube.github.io,http://localhost:5173`
+4. GitHub repo, Settings, Secrets and variables, Actions, Variables, `VITE_PROXY_URL` = the worker url
 5. local dev: `.env.local` with `VITE_PROXY_URL=https://<worker>.workers.dev`
+
+`worker/wrangler.toml` covers `npx wrangler deploy` as an alternative.
 
 ## CLI
 
@@ -32,34 +36,46 @@ node src/cli/main.ts baseline <dir> --out <file> [--ranks lo:hi]
 ```
 
 - `dump`: chunk tree, decoded fields, hex of unknown chunks, first N input events
-- `fetch --map`: lists TMX online records for a map and downloads each as `.Ghost.Gbx`, `--uploads` switches to user-uploaded replays. `--search` prints matching TMX map ids. Writes an `index.json` next to the files with position, map id, record time and record or replay id
-- `fetch --campaign`: top N Nadeo records of every map in an official campaign through trackmania.io, the id is the number in `trackmania.io/#/campaigns/seasonal/<id>`. World records of the current campaign: `fetch --campaign 157584 --count 1 --out fixtures/wr` then `analyze fixtures/wr --baseline public/baseline.json`
-- `analyze`: report per file, cross-file signals when files share a map or login, `--json` prints the same report the web page builds
-- `baseline`: runs every single-file signal over a directory of fetched records and writes median, interquartile range and sample count per signal and per steer device. Ranks 10 to 50 by default, the top of a leaderboard is the polluted part. The result describes typical top records, not clean runs
+- `fetch --map`: TMX online records of a map as `.Ghost.Gbx`, `--uploads` for user-uploaded replays, `--search` for map ids. `index.json` next to the files holds position, map, record time and record or replay id
+- `fetch --campaign`: top N Nadeo records of every map in an official campaign through trackmania.io, the id is the number in `trackmania.io/#/campaigns/seasonal/<id>`
+- `analyze`: report per file plus cross-file signals, `--json` is the same report the page builds
+- `baseline`: median, quartiles and sample count per signal and steer device over a directory of fetched records, ranks 10 to 50 by default
+
+Current world records of a campaign:
+
+```
+node src/cli/main.ts fetch --campaign 157584 --count 1 --out fixtures/wr
+node src/cli/main.ts analyze fixtures/wr --baseline public/baseline.json
+```
 
 ## Signals
 
-| id                       | level               | what                                                                                                                                                                                                                                                              |
-| ------------------------ | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `wall_time_ratio`        | relative            | wall-clock duration of the recording (chunk `0x0309202C`, 1 s resolution) divided by race time. Slow-motion pushes this above 1 by a stable factor. Lag also pushes it above 1, so one file proves nothing, a stable ratio across a player's files is the pattern |
-| `ticks_vs_racetime`      | absolute            | `ticks * 10 + start offset` vs race time, tolerance 2 ticks. Fires on a shortfall, truncated or edited inputs. Manual saves can carry extra ticks after the finish, those do not fire                                                                             |
-| `same_tick_toggle`       | absolute            | an input pressed and released within one 10 ms tick, counted, first timestamps listed. Fires at 10, legit top records show up to 4 per run                                                                                                                        |
-| `steer_spikes_per_sec`   | relative            | the 2021 metric. Steer direction changes per 1 s window ignoring deltas below 4 of 127. Average and max window. Reference: 2021 leaderboard average about 3, average of per-replay max about 6 (TMUF data)                                                        |
-| `input_density`          | relative            | input events per race second, steer and other inputs separately. Low values on long maps are the low-input look                                                                                                                                                   |
-| `steer_device`           | info                | keyboard (only -127, 0, 127 seen), pad (analog range), mixed. Baseline statistics are split by this                                                                                                                                                               |
-| `steer_repetition`       | relative            | pad only. Longest exact repeat of a steer sequence of 50 ticks or more with at least 3 distinct values                                                                                                                                                            |
-| `trajectory_overlap`     | relative, two files | same map, longest window where recorded positions stay within 0.1 m. Needs record data in both files. Two saves of one recording (same ghost uid) are skipped                                                                                                     |
-| `checkpoint_split_match` | info, two files     | identical checkpoint times to the ms across files from one login                                                                                                                                                                                                  |
-| `metadata`               | info                | login, nickname, recording context, exe version, unknown chunk ids                                                                                                                                                                                                |
+| id                       | level               | measures                                                                                                                                        |
+| ------------------------ | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wall_time_delta`        | relative            | wall-clock duration of the recording (chunk `0x0309202C`, 1 s resolution) minus race time, in seconds. Fires above the reference only           |
+| `wall_time_ratio`        | info                | the same as a ratio, aggregated per login across files                                                                                          |
+| `ticks_vs_racetime`      | absolute            | decoded input ticks x 10 ms + start offset vs race time, tolerance 2 ticks. Fires when the inputs end before the finish                         |
+| `same_tick_toggle`       | absolute            | inputs pressed and released within one 10 ms tick. Fires at 10                                                                                  |
+| `steer_spikes_per_sec`   | relative            | steer direction changes per 1 s window, deltas below 4 of 127 ignored. Average, max window, and the 2021 references                             |
+| `input_density`          | relative            | input events per race second, steer and other inputs                                                                                            |
+| `steer_device`           | info                | keyboard (only -127, 0, 127), pad (analog range), mixed. References are split by this                                                           |
+| `steer_repetition`       | relative            | pad only. Longest exact repeat of a steer sequence, 50 ticks or more, at least 3 distinct values                                                |
+| `trajectory_overlap`     | relative, two files | same map, longest window where recorded positions stay within 0.1 m, first 4 s skipped. Two saves of one recording (same ghost uid) are skipped |
+| `checkpoint_split_match` | info, two files     | identical checkpoint times to the ms across files from one login                                                                                |
+| `metadata`               | info                | login, nickname, zone, club tag, map, model, exe build, race settings, validation seed, decode warnings                                         |
 
-`absolute` means the game cannot produce it. `relative` means an outlier against a reference and only fires when a baseline is loaded, outside the Tukey fence (1.5 IQR) for the file's device. `needs human review` is yes when any absolute signal fired or two or more relative signals fired. No percentile rank is ever shown, a rank reads as a probability and it is not one.
+`absolute`: the game does not produce it. `relative`: outside the Tukey fence (1.5 IQR) of the loaded reference for the file's device, silent without a reference. `info`: never fires. `needs human review` is yes when an absolute signal fired or two or more relative signals fired.
+
+`public/baseline.json` holds the reference ranges: 1004 TMX online records, ranks 10 to 50, the 25 Summer 2020 campaign maps plus 7 popular maps, built with `baseline`.
+
+Signals that fire also carry the ticks they point at, shown as red bars on the steer trace.
 
 ## Caveats
 
-- no confirmed cheated TM2020 file has been run through this. Detector thresholds are informed guesses until one is
-- the 2021 reference numbers come from TMNF/TMUF keyboard replays on a 65536-wide steer range, shown next to TM2020 pad data at 127 for scale only
-- wall time has 1 s resolution, short maps get a wide ratio band
-- action slot bit layout for slots 2 and 4 follows the common case, a known game quirk is not handled
+- no file from a confirmed case has been run through this
+- the 2021 references come from TMNF/TMUF replays
+- wall time has 1 s resolution
+- action slots 2 and 4 have an extra bit the decoder ignores
 
 ## Development
 
@@ -70,13 +86,13 @@ npm run lint
 npm run dev
 ```
 
-Fixtures live in `fixtures/` and are tracked, with `*.dump.json` goldens next to them. `fetch` output in any `fixtures/` subdirectory is git-ignored. Pages deploys from `main` via `.github/workflows/pages.yml`, base path `/tm2020-tracker/`.
+Fixtures live in `fixtures/` with `*.dump.json` goldens. `fetch` output in `fixtures/*/` is git-ignored. `.github/workflows/pages.yml` deploys `main` to Pages at `/tm2020-tracker/`.
 
 ## Prior art
 
-- GBX.NET, BigBang1112. Chunk definitions used as the format reference. https://github.com/BigBang1112/gbx-net
-- gbx-ts, thaumictom. MIT TypeScript Gbx parser. Not used: reading bodies needs the GPL `lzo-ts` package, this repo carries its own LZO1X decoder instead. https://github.com/thaumictom/gbx-ts
-- TMX Replay Investigation, donadigo and Wirtual, 2021. Steer spike metric and reference numbers. https://donadigo.com/tmx1
-- donadigo/gbxtools. The 2021 scripts, TMNF format. https://github.com/donadigo/gbxtools
+- GBX.NET, BigBang1112, the format reference. https://github.com/BigBang1112/gbx-net
+- gbx-ts, thaumictom. https://github.com/thaumictom/gbx-ts
+- TMX Replay Investigation, donadigo and Wirtual, 2021. https://donadigo.com/tmx1
+- donadigo/gbxtools. https://github.com/donadigo/gbxtools
 - TM2020-TAS, Polybagel. https://github.com/Polybagel/TM2020-TAS
 - Wirtual, "The New Trackmania Cheating Scandal", 2026-10-27. https://www.youtube.com/watch?v=cf0S-whkiEE
