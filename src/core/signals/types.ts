@@ -42,6 +42,8 @@ export interface FileContext {
   events: InputEvent[]
   steer: Int8Array | null
   samples: Sample[] | null
+  // ticks the input decoder actually read, null without decodable inputs
+  decodedTicks: number | null
   device: Device
 }
 

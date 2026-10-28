@@ -1,6 +1,9 @@
 import { ByteReader } from '../io/byte-reader.ts'
-import { UnsupportedError } from '../io/errors.ts'
+import { ParseError, UnsupportedError } from '../io/errors.ts'
 import type { EntRecordData, Inflate, Sample } from '../model.ts'
+
+// a few hours of samples, anything larger is a crafted file
+export const MAX_RECORD_DATA_BYTES = 128 * 1024 * 1024
 
 export const VEHICLE_CLASS = 0x0a018000
 
@@ -23,6 +26,12 @@ function decodeVehicle(timeMs: number, buf: Uint8Array): Sample {
 // decompressed CPlugEntRecordData body, vehicle entities only
 // samples are inline records below version 11 and column delta-coded from 11 on
 export async function decodeSamples(data: EntRecordData, inflate: Inflate): Promise<Sample[]> {
+  if (data.uncompressedSize < 0 || data.uncompressedSize > MAX_RECORD_DATA_BYTES) {
+    throw new ParseError(
+      `record data declares ${data.uncompressedSize} bytes, cap ${MAX_RECORD_DATA_BYTES}`,
+      0,
+    )
+  }
   const v = data.version
   if (v < 6) {
     throw new UnsupportedError(`ent record data version ${v}, need 6+`)
@@ -73,6 +82,12 @@ export async function decodeSamples(data: EntRecordData, inflate: Inflate): Prom
       r.pos -= 4
       const numSamples = r.i32()
       const sampleSize = r.i32()
+      if (numSamples < 0 || sampleSize < 0 || numSamples * sampleSize > r.remaining()) {
+        throw new ParseError(
+          `sample block ${numSamples} x ${sampleSize} exceeds ${r.remaining()} remaining bytes`,
+          r.pos,
+        )
+      }
       const deltas: number[] = []
       for (let i = 0; i < numSamples; i++) {
         deltas.push(r.i32())

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { inflateSync } from 'node:zlib'
 import { decodeSamples } from './decode.ts'
+import { ParseError } from '../io/errors.ts'
 import type { EntRecordData, Inflate } from '../model.ts'
 import { parseGhostFixture } from '../../test/ghost.ts'
 
@@ -132,5 +133,23 @@ describe('decodeSamples', () => {
     const g = parseGhostFixture('tmio')
     const samples = await decodeSamples(g.recordData!, nodeInflate)
     expect(samples.length).toBeGreaterThan(200)
+  })
+})
+
+describe('hostile sample blocks', () => {
+  test('a sample block larger than the data throws before allocating', async () => {
+    const b = body(VEHICLE_CLASS)
+    const sig = [3, 0, 0, 0, SAMPLE_SIZE, 0, 0, 0]
+    const at = b.findIndex((_, i) => sig.every((x, j) => b[i + j] === x))
+    expect(at).toBeGreaterThan(0)
+    b.splice(at, 8, 4, 0, 0, 0, 0xf0, 0xff, 0xff, 0x7f)
+    await expect(decodeSamples(record(b), identity)).rejects.toThrow(ParseError)
+    await expect(decodeSamples(record(b), identity)).rejects.toThrow(/sample block/)
+  })
+
+  test('a declared size beyond the cap is rejected before inflating', async () => {
+    const rec = { ...record(body(VEHICLE_CLASS)), uncompressedSize: 0x7fffffff }
+    await expect(decodeSamples(rec, identity)).rejects.toThrow(ParseError)
+    await expect(decodeSamples(rec, identity)).rejects.toThrow(/declares/)
   })
 })

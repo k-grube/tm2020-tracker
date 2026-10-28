@@ -2,7 +2,7 @@ import { TICK_MS, TICKS_TOLERANCE } from './constants.ts'
 import { notApplicable } from './relative.ts'
 import type { Detector } from './types.ts'
 
-// recorded input ticks must reach the finish, manual replay saves keep ticks past it so only a shortfall fires
+// decoded input ticks must reach the finish, manual replay saves keep ticks past it so only a shortfall fires
 export const ticksVsRaceTime: Detector = (ctx) => {
   const input = ctx.ghost.inputs[0]
   const raceTimeMs = ctx.ghost.raceTimeMs
@@ -12,9 +12,22 @@ export const ticksVsRaceTime: Detector = (ctx) => {
   if (raceTimeMs === null) {
     return notApplicable('ticks_vs_racetime', 'absolute', 'no race time')
   }
-  const recordedMs = input.ticks * TICK_MS + (input.startOffsetMs ?? 0)
+  const ticks = ctx.decodedTicks ?? input.ticks
+  const offset = input.startOffsetMs ?? 0
+  const recordedMs = ticks * TICK_MS + offset
   const value = recordedMs - raceTimeMs
   const fired = value < -TICKS_TOLERANCE * TICK_MS
+  const evidence = [
+    `${ticks} ticks x ${TICK_MS} ms + start offset ${offset} ms = ${recordedMs} ms, race ${raceTimeMs} ms`,
+  ]
+  if (ctx.decodedTicks !== null && ctx.decodedTicks !== input.ticks) {
+    evidence.push(`decoded ${ctx.decodedTicks} of ${input.ticks} ticks, the data ends early`)
+  }
+  evidence.push(
+    fired
+      ? `inputs stop ${-value} ms before the finish`
+      : `inputs cover the finish (${value >= 0 ? '+' : ''}${value} ms)`,
+  )
   return {
     id: 'ticks_vs_racetime',
     level: 'absolute',
@@ -22,12 +35,7 @@ export const ticksVsRaceTime: Detector = (ctx) => {
     fired,
     value,
     unit: 'ms',
-    evidence: [
-      `${input.ticks} ticks x ${TICK_MS} ms + start offset ${input.startOffsetMs ?? 0} ms = ${recordedMs} ms, race ${raceTimeMs} ms`,
-      fired
-        ? `inputs stop ${-value} ms before the finish`
-        : `inputs cover the finish (${value >= 0 ? '+' : ''}${value} ms)`,
-    ],
+    evidence,
     references: [],
   }
 }

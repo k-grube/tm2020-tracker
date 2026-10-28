@@ -47,7 +47,7 @@ function filenameFrom(headers: Headers, fallback: string): string {
   const m = /filename="([^"]+)"|filename=([^;]+)/i.exec(cd)
   const raw = m?.[1] ?? m?.[2]
   const name = raw ? sanitizeFilename(raw.trim()) : ''
-  return name.length > 0 ? name : fallback
+  return name.length > 0 && name !== '.' && name !== '..' ? name : fallback
 }
 
 const PAGE = 100
@@ -119,7 +119,11 @@ export function createTmxClient(fetchFn: typeof fetch, userAgent: string): TmxCl
     },
 
     downloadOnlineRecord(recordId) {
-      return download(`/getonlinerecord/${recordId}`, `${recordId}.Ghost.Gbx`)
+      // record ids come from tmx json, keep them out of the path and the filename unfiltered
+      return download(
+        `/getonlinerecord/${encodeURIComponent(recordId)}`,
+        `${sanitizeFilename(recordId)}.Ghost.Gbx`,
+      )
     },
 
     downloadReplay(replayId) {

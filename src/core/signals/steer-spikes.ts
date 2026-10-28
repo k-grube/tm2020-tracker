@@ -39,7 +39,12 @@ export const steerSpikes: Detector = (ctx, baseline) => {
   }
   const total = windows.reduce((a, b) => a + b, 0)
   const avg = total / windows.length
-  const max = Math.max(...windows)
+  let max = 0
+  for (const w of windows) {
+    if (w > max) {
+      max = w
+    }
+  }
   return relativeResult(
     'steer_spikes_per_sec',
     avg,

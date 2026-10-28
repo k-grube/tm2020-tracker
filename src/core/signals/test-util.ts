@@ -41,6 +41,7 @@ export function fakeCtx(
     events: [],
     steer: null,
     samples: null,
+    decodedTicks: null,
     device: 'unknown',
     ...rest,
   }

@@ -26,6 +26,8 @@ export const PAD_MIN_DISTINCT_STEER = 16
 export const TRAJECTORY_EPS_M = 0.1
 export const TRAJECTORY_MIN_WINDOW_MS = 2000
 export const TRAJECTORY_SKIP_START_MS = 1000
+// longest sample span two files are stepped through, file-declared times past this are not compared
+export const TRAJECTORY_MAX_SPAN_MS = 2 * 60 * 60 * 1000
 
 // wall time chunk stores unix seconds
 export const WALL_TIME_RESOLUTION_S = 1

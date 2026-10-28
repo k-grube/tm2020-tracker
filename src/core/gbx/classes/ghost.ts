@@ -1,6 +1,7 @@
 import { readNodeRef, type ChunkReader, type ClassDef, type ReadContext } from '../node.ts'
 import { readId, readIdent, readPackDesc } from '../ids.ts'
 import type { ByteReader } from '../../io/byte-reader.ts'
+import { ParseError } from '../../io/errors.ts'
 import type { EntRecordData, Ghost } from '../../model.ts'
 
 export const GHOST_CLASS = 0x03092000
@@ -109,6 +110,10 @@ function read01d(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
     const startOffsetMs = version >= 4 ? p!.timeint() : null
     const ticks = p!.i32()
     const data = p!.data()
+    // every tick costs at least one bit, a larger count is a crafted file
+    if (ticks < 0 || ticks > data.length * 8) {
+      throw new ParseError(`input ticks ${ticks} exceed ${data.length} data bytes`, p!.pos)
+    }
     g.inputs.push({ version: v, u01, startOffsetMs, ticks, data })
   }
 }

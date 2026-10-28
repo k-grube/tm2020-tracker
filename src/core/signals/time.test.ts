@@ -142,3 +142,32 @@ describe('metadata', () => {
     expect(r.evidence.some((e) => e.includes('login'))).toBe(true)
   })
 })
+
+describe('ticks_vs_racetime, decoded ticks', () => {
+  test('decoded ticks short of the declared count fire', () => {
+    const r = ticksVsRaceTime(
+      fakeCtx({
+        decodedTicks: 1363,
+        ghost: {
+          raceTimeMs: 24794,
+          inputs: [{ version: 12, u01: 0, startOffsetMs: 0, ticks: 2480, data: new Uint8Array(0) }],
+        },
+      }),
+      null,
+    )
+    expect(r.fired).toBe(true)
+    expect(r.value).toBe(13630 - 24794)
+    expect(r.evidence.join(' ')).toContain('decoded 1363 of 2480 ticks')
+  })
+
+  test('slidrz with half its input data fires through buildContext', async () => {
+    const parsed = parseGbx(loadFixture('slidrz'))
+    const input = parsed.ghosts[0]!.inputs[0]!
+    input.data = input.data.slice(0, input.data.length >> 1)
+    const ctx = await buildContext('cut', parsed, nodeInflate)
+    expect(ctx.decodedTicks).toBeLessThan(input.ticks)
+    const r = ticksVsRaceTime(ctx, null)
+    expect(r.fired).toBe(true)
+    expect(r.evidence.join(' ')).toMatch(/decoded \d+ of 2480 ticks/)
+  })
+})

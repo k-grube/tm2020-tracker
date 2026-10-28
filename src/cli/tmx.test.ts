@@ -172,3 +172,21 @@ describe('fetchCommand', () => {
     })
   })
 })
+
+describe('download filenames from remote data', () => {
+  test('the fallback filename is sanitized and the id is encoded in the url', async () => {
+    const { fetchFn, calls } = stubFetch(() => ({ bytes: [1] }))
+    const dl = await createTmxClient(fetchFn, UA).downloadOnlineRecord('../x/y')
+    expect(calls[0]!.url).toBe('https://trackmania.exchange/getonlinerecord/..%2Fx%2Fy')
+    expect(dl.filename).toBe('..xy.Ghost.Gbx')
+  })
+
+  test('a dot-only content-disposition name falls back', async () => {
+    const { fetchFn } = stubFetch(() => ({
+      bytes: [1],
+      headers: { 'content-disposition': 'attachment; filename=".."' },
+    }))
+    const dl = await createTmxClient(fetchFn, UA).downloadReplay(7)
+    expect(dl.filename).toBe('tmx-7.Replay.Gbx')
+  })
+})

@@ -2,6 +2,7 @@ import type { Sample } from '../model.ts'
 import {
   TICK_MS,
   TRAJECTORY_EPS_M,
+  TRAJECTORY_MAX_SPAN_MS,
   TRAJECTORY_MIN_WINDOW_MS,
   TRAJECTORY_SKIP_START_MS,
 } from './constants.ts'
@@ -43,6 +44,9 @@ export function trajectoryOverlap(a: FileContext, b: FileContext): SignalResult 
   const end = Math.min(a.samples.at(-1)!.timeMs, b.samples.at(-1)!.timeMs)
   if (end <= start) {
     return notApplicable('trajectory_overlap', 'relative', 'no overlapping time range')
+  }
+  if (end - start > TRAJECTORY_MAX_SPAN_MS) {
+    return notApplicable('trajectory_overlap', 'relative', 'time range too long to compare')
   }
   const posA = interpolator(a.samples)
   const posB = interpolator(b.samples)

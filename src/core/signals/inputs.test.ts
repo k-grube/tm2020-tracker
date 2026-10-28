@@ -159,3 +159,11 @@ describe('steer_repetition', () => {
     expect(steerRepetition(fakeCtx({ device: 'pad', steer }), null).value).toBe(0)
   })
 })
+
+describe('steer_spikes_per_sec, long series', () => {
+  test('twenty million ticks of flat steer average zero without blowing the stack', () => {
+    const r = steerSpikes(fakeCtx({ steer: new Int8Array(20_000_000), device: 'pad' }), null)
+    expect(r.applicable).toBe(true)
+    expect(r.value).toBe(0)
+  })
+})

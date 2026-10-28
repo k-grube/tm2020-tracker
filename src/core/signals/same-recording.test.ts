@@ -35,3 +35,21 @@ describe('pair signals on the same recording', () => {
     expect(trajectoryOverlap(a, c).applicable).toBe(true)
   })
 })
+
+describe('trajectory_overlap, hostile times', () => {
+  test('a sample span beyond the cap is not applicable instead of stepping through it', () => {
+    const far = (uid: string) =>
+      fakeCtx({
+        ghost: { ghostUid: uid },
+        samples: [
+          { timeMs: 0, position: [0, 0, 0], speedMs: 0 },
+          { timeMs: 2_000_000_000, position: [1, 1, 1], speedMs: 0 },
+        ],
+      })
+    const started = Date.now()
+    const r = trajectoryOverlap(far('a'), far('b'))
+    expect(Date.now() - started).toBeLessThan(500)
+    expect(r.applicable).toBe(false)
+    expect(r.evidence[0]).toMatch(/time range/)
+  })
+})

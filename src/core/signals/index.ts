@@ -46,6 +46,30 @@ const MULTI_FILE_PLACEHOLDERS: SignalResult[] = [
   notApplicable('checkpoint_split_match', 'info', 'needs two files on the same map from one login'),
 ]
 
+// a file that could not be parsed or analyzed, one metadata line carries the message
+export function errorReport(name: string, message: string): FileReport {
+  return {
+    name,
+    login: '',
+    mapUid: '',
+    raceTimeMs: null,
+    device: 'unknown',
+    signals: [
+      {
+        id: 'metadata',
+        level: 'info',
+        applicable: false,
+        fired: false,
+        value: null,
+        unit: '',
+        evidence: [`${name}: ${message}`],
+        references: [],
+      },
+    ],
+    summary: { absoluteFired: [], relativeOutside: [], needsHumanReview: false },
+  }
+}
+
 export function analyzeFile(ctx: FileContext, baseline: Baseline | null): FileReport {
   const signals = [...DETECTORS.map((d) => d(ctx, baseline)), ...MULTI_FILE_PLACEHOLDERS]
   return {
@@ -59,11 +83,24 @@ export function analyzeFile(ctx: FileContext, baseline: Baseline | null): FileRe
   }
 }
 
+// a detector failure on one file never takes the batch down, that file becomes an error report
 export function analyzeFiles(ctxs: FileContext[], baseline: Baseline | null): Report {
-  const files = ctxs.map((c) => analyzeFile(c, baseline))
+  const files: FileReport[] = []
+  const okCtxs: FileContext[] = []
+  const okReports: FileReport[] = []
+  for (const ctx of ctxs) {
+    try {
+      const report = analyzeFile(ctx, baseline)
+      files.push(report)
+      okCtxs.push(ctx)
+      okReports.push(report)
+    } catch (e) {
+      files.push(errorReport(ctx.name, e instanceof Error ? e.message : String(e)))
+    }
+  }
   return {
     generatedAt: new Date().toISOString(),
     files,
-    groups: buildGroups(ctxs, files),
+    groups: buildGroups(okCtxs, okReports),
   }
 }

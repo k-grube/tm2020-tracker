@@ -1,8 +1,12 @@
 import { describe, expect, test } from 'vitest'
-import { decodeInputs, steerSeries } from './decode.ts'
+import { decodeInputs, decodeInputStream, steerSeries } from './decode.ts'
 import { ParseError } from '../io/errors.ts'
 import type { PlayerInputData } from '../model.ts'
 import { parseGhostFixture } from '../../test/ghost.ts'
+import { parseGbx } from '../parse.ts'
+import { loadFixture, type FixtureName } from '../../test/fixtures.ts'
+
+const ghostOf = (name: FixtureName) => parseGbx(loadFixture(name)).ghosts[0]!
 
 class BitWriter {
   private bits: number[] = []
@@ -134,5 +138,45 @@ describe('steerSeries', () => {
       7,
     )
     expect(Array.from(series)).toEqual([0, 0, 50, 50, 50, -20, -20])
+  })
+})
+
+describe('decodeInputStream', () => {
+  test('reports how many ticks were decoded before the data ran out', () => {
+    const { events, decodedTicks } = decodeInputStream(inputData(startThenSteer().bytes(), 10))
+    expect(events).toHaveLength(2)
+    expect(decodedTicks).toBe(2)
+  })
+
+  test('decodes every tick of each fixture', () => {
+    for (const name of ['slidrz', 'tmio', 'tmxReplay', 'localPbReplay'] as const) {
+      const input = ghostOf(name).inputs[0]!
+      expect(decodeInputStream(input).decodedTicks, name).toBe(input.ticks)
+    }
+  })
+})
+
+describe('state kinds', () => {
+  // tick 1: full state kind 15, then bits that read as a brake press if treated as vehicle
+  test('a state kind outside 2..4 reads no vehicle fields', () => {
+    const data = startThenSteer()
+      .bit(0)
+      .bit(0)
+      .num(15n, 34)
+      .bit(1)
+      .bit(0)
+      .i8(0)
+      .bit(0)
+      .bit(1)
+      .bytes()
+    const events = decodeInputs(inputData(data, 3))
+    expect(events.filter((e) => e.kind === 'brake')).toEqual([])
+    expect(events).toHaveLength(2)
+  })
+
+  test('the manual save decodes the same events as the autosave of the same run', () => {
+    const manual = decodeInputs(ghostOf('localReplay').inputs[0]!)
+    const auto = decodeInputs(ghostOf('localPbReplay').inputs[0]!)
+    expect(manual).toEqual(auto)
   })
 })

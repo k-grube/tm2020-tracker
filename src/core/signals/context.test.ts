@@ -77,3 +77,27 @@ describe('summarize', () => {
     expect(s).toEqual({ absoluteFired: [], relativeOutside: [], needsHumanReview: false })
   })
 })
+
+describe('buildContext, partial decode failures', () => {
+  test('undecodable record data leaves samples null and adds a warning', async () => {
+    const parsed = parseGbx(loadFixture('slidrz'))
+    parsed.ghosts[0]!.recordData!.compressed.fill(0xff, 100, 150)
+    const ctx = await buildContext('corrupt', parsed, nodeInflate)
+    expect(ctx.samples).toBeNull()
+    expect(ctx.events.length).toBeGreaterThan(100)
+    expect(parsed.warnings.join(' ')).toMatch(/record data/)
+  })
+
+  test('unsupported input encoding leaves events empty and adds a warning', async () => {
+    const parsed = parseGbx(loadFixture('slidrz'))
+    const input = parsed.ghosts[0]!.inputs[0]!
+    input.data = new Uint8Array([0x30, 0, 0, 0, 0])
+    input.ticks = 2
+    const ctx = await buildContext('float', parsed, nodeInflate)
+    expect(ctx.events).toEqual([])
+    expect(ctx.steer).toBeNull()
+    expect(ctx.decodedTicks).toBeNull()
+    expect(ctx.samples!.length).toBeGreaterThan(200)
+    expect(parsed.warnings.join(' ')).toMatch(/float steer/)
+  })
+})

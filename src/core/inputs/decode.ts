@@ -24,8 +24,19 @@ function bitOf(v: bigint, bit: number): number {
   return Number((v >> BigInt(bit)) & 1n)
 }
 
+export interface DecodedInputs {
+  events: InputEvent[]
+  decodedTicks: number
+}
+
 export function decodeInputs(d: PlayerInputData): InputEvent[] {
+  return decodeInputStream(d).events
+}
+
+// decodedTicks counts the ticks fully read, short of d.ticks when the data ends early
+export function decodeInputStream(d: PlayerInputData): DecodedInputs {
   const b = new BitReader(d.data)
+  let decodedTicks = 0
   const offset = d.startOffsetMs ?? 0
   const fullBits = d.version === 11 ? 33 : 34
   const events: InputEvent[] = []
@@ -63,7 +74,8 @@ export function decodeInputs(d: PlayerInputData): InputEvent[] {
           if (kind === 0xc || kind === 0xd) {
             throw new UnsupportedError('float steer inputs')
           }
-          state = kind === 0 ? 'notStarted' : kind === 1 ? 'character' : 'vehicle'
+          // gbx.net: 2..4 vehicle, 0 not started, anything else character (15 shows up at the finish)
+          state = kind === 0 ? 'notStarted' : kind >= 2 && kind <= 4 ? 'vehicle' : 'character'
           for (const f of FULL_STATE_BITS) {
             const now = bitOf(s, f.bit)
             const before = bitOf(prevFull, f.bit)
@@ -115,6 +127,7 @@ export function decodeInputs(d: PlayerInputData): InputEvent[] {
           b.read(8)
         }
       }
+      decodedTicks = tick + 1
     }
   } catch (e) {
     // running out of bits mid-tick is the tolerated end-of-buffer case
@@ -129,7 +142,7 @@ export function decodeInputs(d: PlayerInputData): InputEvent[] {
       throw new ParseError('trailing input data', i)
     }
   }
-  return events
+  return { events, decodedTicks }
 }
 
 // per-tick steer, forward-filled, 0 before the first steer event

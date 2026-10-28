@@ -1,35 +1,12 @@
 import { parseGbx } from './parse.ts'
 import { buildContext } from './signals/context.ts'
-import { analyzeFiles } from './signals/index.ts'
+import { analyzeFiles, errorReport } from './signals/index.ts'
 import type { Inflate } from './model.ts'
-import type { Baseline, FileContext, FileReport, Report } from './signals/types.ts'
+import type { Baseline, FileContext, Report } from './signals/types.ts'
 
 export interface InputFile {
   name: string
   bytes: Uint8Array
-}
-
-function errorReport(name: string, message: string): FileReport {
-  return {
-    name,
-    login: '',
-    mapUid: '',
-    raceTimeMs: null,
-    device: 'unknown',
-    signals: [
-      {
-        id: 'metadata',
-        level: 'info',
-        applicable: false,
-        fired: false,
-        value: null,
-        unit: '',
-        evidence: [`${name}: ${message}`],
-        references: [],
-      },
-    ],
-    summary: { absoluteFired: [], relativeOutside: [], needsHumanReview: false },
-  }
 }
 
 // same entry for the cli and the web page, a file that fails to parse becomes an error report
