@@ -35,3 +35,21 @@ export function steerPath(steer: Int8Array, width: number, height: number, view?
   }
   return parts.join(' ')
 }
+
+// shift the window by delta ticks, clamped to the series
+export function panView(view: View, delta: number, length: number): View {
+  const [start, end] = view
+  const span = end - start
+  const nextStart = Math.max(0, Math.min(length - span, Math.round(start + delta)))
+  return [nextStart, nextStart + span]
+}
+
+export const MIN_THUMB_PX = 8
+
+// scrollbar thumb for the view on a track of the given width
+export function thumb(view: View, length: number, width: number): { x: number; width: number } {
+  const [start, end] = view
+  const w = Math.max(MIN_THUMB_PX, ((end - start) / length) * width)
+  const x = Math.min(width - w, (start / length) * width)
+  return { x, width: w }
+}

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import type { Span } from '../../core/signals/types.ts'
-import { steerPath, zoomView, type View } from './steer-view.ts'
+import { panView, steerPath, thumb, zoomView, type View } from './steer-view.ts'
 
 export { steerPath } from './steer-view.ts'
 
 const WIDTH = 800
 const HEIGHT = 120
 const FLAG_H = 4
+const TRACK_H = 8
 const ZOOM_IN = 0.5
 const ZOOM_OUT = 2
 const WHEEL_STEP = 1.25
@@ -16,14 +17,17 @@ const BTN =
 
 export function SteerTrace({ steer, spans = [] }: { steer: Int8Array; spans?: Span[] }) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const drag = useRef<{ x: number; view: View } | null>(null)
   const [view, setView] = useState<View>([0, steer.length])
   const [hover, setHover] = useState<number | null>(null)
   const [start, end] = view
   const span = Math.max(end - start, 1)
+  const zoomed = span < steer.length
   const toX = (tick: number) => ((tick - start) / span) * WIDTH
   const d = steerPath(steer, WIDTH, HEIGHT, view)
 
   // react registers wheel as passive, the page would scroll along with the zoom
+  // plain wheel zooms around the cursor, shift or a horizontal wheel pans
   useEffect(() => {
     const svg = svgRef.current
     if (!svg) {
@@ -32,6 +36,11 @@ export function SteerTrace({ steer, spans = [] }: { steer: Int8Array; spans?: Sp
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
       const rect = svg.getBoundingClientRect()
+      if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        const delta = e.shiftKey ? e.deltaY : e.deltaX
+        setView((v) => panView(v, ((v[1] - v[0]) * delta) / rect.width, steer.length))
+        return
+      }
       const frac = (e.clientX - rect.left) / rect.width
       setView((v) => zoomView(v, e.deltaY < 0 ? 1 / WHEEL_STEP : WHEEL_STEP, frac, steer.length))
     }
@@ -39,14 +48,67 @@ export function SteerTrace({ steer, spans = [] }: { steer: Int8Array; spans?: Sp
     return () => svg.removeEventListener('wheel', onWheel)
   }, [steer.length])
 
+  const ticksPerPx = (rectWidth: number) => span / rectWidth
+
+  const onDown = (e: PointerEvent<SVGSVGElement>) => {
+    if (!zoomed) {
+      return
+    }
+    e.currentTarget.setPointerCapture(e.pointerId)
+    drag.current = { x: e.clientX, view }
+    setHover(null)
+  }
+
   const onMove = (e: PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
+    if (drag.current) {
+      const dx = e.clientX - drag.current.x
+      setView(panView(drag.current.view, -dx * ticksPerPx(rect.width), steer.length))
+      return
+    }
     const tick = Math.round(start + ((e.clientX - rect.left) / rect.width) * span)
     setHover(Math.min(Math.max(tick, 0), steer.length - 1))
   }
 
+  const onUp = (e: PointerEvent<SVGSVGElement>) => {
+    if (drag.current) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+      drag.current = null
+    }
+  }
+
+  // the track below the plot, drag the thumb or click beside it
+  const trackDrag = useRef<{ x: number; view: View } | null>(null)
+  const onTrackDown = (e: PointerEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const frac = (e.clientX - rect.left) / rect.width
+    const t = thumb(view, steer.length, rect.width)
+    const px = frac * rect.width
+    if (px < t.x || px > t.x + t.width) {
+      const centre = frac * steer.length
+      setView(panView(view, centre - (start + span / 2), steer.length))
+    }
+    e.currentTarget.setPointerCapture(e.pointerId)
+    trackDrag.current = { x: e.clientX, view }
+  }
+  const onTrackMove = (e: PointerEvent<SVGSVGElement>) => {
+    if (!trackDrag.current) {
+      return
+    }
+    const rect = e.currentTarget.getBoundingClientRect()
+    const dx = e.clientX - trackDrag.current.x
+    setView(panView(trackDrag.current.view, (dx / rect.width) * steer.length, steer.length))
+  }
+  const onTrackUp = (e: PointerEvent<SVGSVGElement>) => {
+    if (trackDrag.current) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+      trackDrag.current = null
+    }
+  }
+
   const hx = hover === null ? 0 : toX(hover)
   const visible = spans.filter((s) => s.endTick > start && s.startTick < end)
+  const th = thumb(view, steer.length, WIDTH)
 
   return (
     <figure className="chart mt-5">
@@ -75,8 +137,11 @@ export function SteerTrace({ steer, spans = [] }: { steer: Int8Array; spans?: Sp
       <svg
         ref={svgRef}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="h-auto w-full touch-none rounded-md bg-zinc-50 dark:bg-zinc-900"
+        className={`h-auto w-full touch-none rounded-md bg-zinc-50 dark:bg-zinc-900 ${zoomed ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        onPointerDown={onDown}
         onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
         onPointerLeave={() => setHover(null)}
         role="img"
         aria-label="steer value over time"
@@ -107,6 +172,23 @@ export function SteerTrace({ steer, spans = [] }: { steer: Int8Array; spans?: Sp
           </g>
         )}
       </svg>
+      {zoomed && (
+        <svg
+          viewBox={`0 0 ${WIDTH} ${TRACK_H}`}
+          className="mt-1 h-2 w-full touch-none cursor-pointer"
+          onPointerDown={onTrackDown}
+          onPointerMove={onTrackMove}
+          onPointerUp={onTrackUp}
+          onPointerCancel={onTrackUp}
+          role="scrollbar"
+          aria-valuemin={0}
+          aria-valuemax={steer.length}
+          aria-valuenow={start}
+        >
+          <rect className="track" x={0} y={0} width={WIDTH} height={TRACK_H} rx={4} />
+          <rect className="thumb" x={th.x} y={0} width={th.width} height={TRACK_H} rx={4} />
+        </svg>
+      )}
     </figure>
   )
 }

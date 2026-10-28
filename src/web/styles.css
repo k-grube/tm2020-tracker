@@ -64,6 +64,15 @@
     fill: #d03b3b;
   }
 
+  .chart .track {
+    fill: var(--gridline);
+  }
+
+  .chart .thumb {
+    fill: var(--ink-2);
+    opacity: 0.6;
+  }
+
   .lane-1 {
     fill: var(--series-1);
   }

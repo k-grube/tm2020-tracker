@@ -76,3 +76,11 @@ describe('SteerTrace spans', () => {
     expect(html).toContain('<title>gas toggle</title>')
   })
 })
+
+describe('SteerTrace scrollbar', () => {
+  test('the full view has no scrollbar', async () => {
+    const { SteerTrace } = await import('./components/SteerTrace.tsx')
+    const html = renderToStaticMarkup(createElement(SteerTrace, { steer: new Int8Array(1000) }))
+    expect(html).not.toContain('role="scrollbar"')
+  })
+})

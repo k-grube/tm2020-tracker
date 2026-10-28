@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { steerPath, zoomView, type View } from './steer-view.ts'
+import { panView, steerPath, thumb, zoomView, type View } from './steer-view.ts'
 
 describe('zoomView', () => {
   const full: View = [0, 2480]
@@ -33,5 +33,28 @@ describe('steerPath with a view', () => {
 
   test('the default view keeps one point per 10 ticks', () => {
     expect(steerPath(new Int8Array(1000), 400, 100).match(/L/g)).toHaveLength(99)
+  })
+})
+
+describe('panView', () => {
+  test('shifts the window by ticks and clamps at both ends', () => {
+    expect(panView([620, 1860], 100, 2480)).toEqual([720, 1960])
+    expect(panView([620, 1860], -1000, 2480)).toEqual([0, 1240])
+    expect(panView([620, 1860], 5000, 2480)).toEqual([1240, 2480])
+  })
+
+  test('a full view does not move', () => {
+    expect(panView([0, 2480], 300, 2480)).toEqual([0, 2480])
+  })
+})
+
+describe('thumb', () => {
+  test('maps the view onto a track of the given width', () => {
+    expect(thumb([620, 1860], 2480, 800)).toEqual({ x: 200, width: 400 })
+    expect(thumb([0, 2480], 2480, 800)).toEqual({ x: 0, width: 800 })
+  })
+
+  test('never gets thinner than 8 px', () => {
+    expect(thumb([1000, 1010], 2480, 800).width).toBe(8)
   })
 })
