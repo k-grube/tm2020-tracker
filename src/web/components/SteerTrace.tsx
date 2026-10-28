@@ -15,6 +15,41 @@ const WHEEL_STEP = 1.25
 const BTN =
   'rounded border border-zinc-300 px-2 text-xs text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800'
 
+// scrollbar under the plot, 800 units stretched over the full width so thumb and pointer agree
+export function TrackBar({
+  view,
+  length,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+}: {
+  view: View
+  length: number
+  onPointerDown: (e: PointerEvent<SVGSVGElement>) => void
+  onPointerMove: (e: PointerEvent<SVGSVGElement>) => void
+  onPointerUp: (e: PointerEvent<SVGSVGElement>) => void
+}) {
+  const th = thumb(view, length, WIDTH)
+  return (
+    <svg
+      viewBox={`0 0 ${WIDTH} ${TRACK_H}`}
+      preserveAspectRatio="none"
+      className="mt-1 h-2 w-full touch-none cursor-pointer"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      role="scrollbar"
+      aria-valuemin={0}
+      aria-valuemax={length}
+      aria-valuenow={view[0]}
+    >
+      <rect className="track" x={0} y={0} width={WIDTH} height={TRACK_H} />
+      <rect className="thumb" x={th.x} y={0} width={th.width} height={TRACK_H} />
+    </svg>
+  )
+}
+
 export function SteerTrace({ steer, spans = [] }: { steer: Int8Array; spans?: Span[] }) {
   const svgRef = useRef<SVGSVGElement>(null)
   const drag = useRef<{ x: number; view: View } | null>(null)
@@ -77,19 +112,20 @@ export function SteerTrace({ steer, spans = [] }: { steer: Int8Array; spans?: Sp
     }
   }
 
-  // the track below the plot, drag the thumb or click beside it
+  // the track below the plot, drag the thumb or click beside it to centre the view there
   const trackDrag = useRef<{ x: number; view: View } | null>(null)
   const onTrackDown = (e: PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
-    const frac = (e.clientX - rect.left) / rect.width
-    const t = thumb(view, steer.length, rect.width)
-    const px = frac * rect.width
-    if (px < t.x || px > t.x + t.width) {
-      const centre = frac * steer.length
-      setView(panView(view, centre - (start + span / 2), steer.length))
+    const u = ((e.clientX - rect.left) / rect.width) * WIDTH
+    const t = thumb(view, steer.length, WIDTH)
+    let next = view
+    if (u < t.x || u > t.x + t.width) {
+      const centre = (u / WIDTH) * steer.length
+      next = panView(view, centre - (start + span / 2), steer.length)
+      setView(next)
     }
     e.currentTarget.setPointerCapture(e.pointerId)
-    trackDrag.current = { x: e.clientX, view }
+    trackDrag.current = { x: e.clientX, view: next }
   }
   const onTrackMove = (e: PointerEvent<SVGSVGElement>) => {
     if (!trackDrag.current) {
@@ -108,7 +144,6 @@ export function SteerTrace({ steer, spans = [] }: { steer: Int8Array; spans?: Sp
 
   const hx = hover === null ? 0 : toX(hover)
   const visible = spans.filter((s) => s.endTick > start && s.startTick < end)
-  const th = thumb(view, steer.length, WIDTH)
 
   return (
     <figure className="chart mt-5">
@@ -173,21 +208,13 @@ export function SteerTrace({ steer, spans = [] }: { steer: Int8Array; spans?: Sp
         )}
       </svg>
       {zoomed && (
-        <svg
-          viewBox={`0 0 ${WIDTH} ${TRACK_H}`}
-          className="mt-1 h-2 w-full touch-none cursor-pointer"
+        <TrackBar
+          view={view}
+          length={steer.length}
           onPointerDown={onTrackDown}
           onPointerMove={onTrackMove}
           onPointerUp={onTrackUp}
-          onPointerCancel={onTrackUp}
-          role="scrollbar"
-          aria-valuemin={0}
-          aria-valuemax={steer.length}
-          aria-valuenow={start}
-        >
-          <rect className="track" x={0} y={0} width={WIDTH} height={TRACK_H} rx={4} />
-          <rect className="thumb" x={th.x} y={0} width={th.width} height={TRACK_H} rx={4} />
-        </svg>
+        />
       )}
     </figure>
   )

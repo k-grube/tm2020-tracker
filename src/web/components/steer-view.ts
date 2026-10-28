@@ -19,6 +19,7 @@ function fmt(n: number): string {
 }
 
 // svg path for the visible range, one point per 10 ticks at full view, every tick when zoomed in
+// samples sit on a fixed tick grid so panning never changes which ticks are drawn
 export function steerPath(steer: Int8Array, width: number, height: number, view?: View): string {
   if (steer.length === 0) {
     return ''
@@ -26,9 +27,10 @@ export function steerPath(steer: Int8Array, width: number, height: number, view?
   const [start, end] = view ?? [0, steer.length]
   const span = Math.max(end - start, 1)
   const step = Math.max(1, Math.min(10, Math.floor(span / 100)))
-  const last = Math.min(end, steer.length - 1)
+  const first = Math.floor(start / step) * step
+  const last = Math.min(Math.ceil(end / step) * step, steer.length - 1)
   const parts: string[] = []
-  for (let i = start; i <= last; i += step) {
+  for (let i = first; i <= last; i += step) {
     const x = ((i - start) / span) * width
     const y = height / 2 - (steer[i]! / 127) * (height / 2)
     parts.push(`${parts.length === 0 ? 'M' : 'L'}${fmt(x)},${fmt(y)}`)

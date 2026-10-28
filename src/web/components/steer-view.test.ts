@@ -58,3 +58,13 @@ describe('thumb', () => {
     expect(thumb([1000, 1010], 2480, 800).width).toBe(8)
   })
 })
+
+describe('steerPath while panning', () => {
+  test('samples stay on a fixed tick grid so a one tick pan does not reshape the line', () => {
+    const steer = Int8Array.from(Array.from({ length: 2000 }, (_, i) => ((i * 37) % 255) - 127))
+    const ys = (d: string) => d.match(/,(-?[\d.]+)/g)
+    const a = ys(steerPath(steer, 400, 100, [0, 1000]))!
+    const b = ys(steerPath(steer, 400, 100, [3, 1003]))!
+    expect(b.slice(0, a.length)).toEqual(a)
+  })
+})
