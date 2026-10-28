@@ -144,7 +144,7 @@ describe('ticks_vs_racetime', () => {
 })
 
 describe('metadata', () => {
-  test('lists exe version and raw chunk sizes when present', () => {
+  test('lists exe version and leaves raw chunks out', () => {
     const r = metadata(
       fakeCtx({
         ghost: {
