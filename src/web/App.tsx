@@ -7,6 +7,7 @@ import { FileReportView } from './components/FileReportView.tsx'
 import { FileTabs } from './components/FileTabs.tsx'
 import { GroupsView } from './components/GroupsView.tsx'
 import { CampaignBrowser } from './components/CampaignBrowser.tsx'
+import { MapRecords } from './components/MapRecords.tsx'
 import { Glossary } from './components/Glossary.tsx'
 import { addFiles, type StoredFile } from './files.ts'
 import { isGbx, proxiedUrl, recordUrls } from './proxy.ts'
@@ -56,7 +57,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [uuid, setUuid] = useState('')
-  const [mode, setMode] = useState<'files' | 'campaign'>('files')
+  const [mode, setMode] = useState<'files' | 'campaign' | 'map'>('files')
 
   useEffect(() => {
     const w = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
@@ -214,9 +215,20 @@ export function App() {
           >
             campaign leaderboards
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'map'}
+            className={mode === 'map' ? TAB_ON : TAB_OFF}
+            onClick={() => setMode('map')}
+          >
+            map records
+          </button>
         </div>
       )}
-      {mode === 'campaign' && PROXY ? (
+      {mode === 'map' && PROXY ? (
+        <MapRecords proxy={PROXY} busy={busy} onFiles={addAndAnalyze} />
+      ) : mode === 'campaign' && PROXY ? (
         <CampaignBrowser
           proxy={PROXY}
           busy={busy}

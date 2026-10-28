@@ -241,3 +241,14 @@ describe('Glossary', () => {
     expect(html).toContain('<details')
   })
 })
+
+describe('MapRecords', () => {
+  test('button is disabled until the field holds a tmx map id', async () => {
+    const { MapRecords } = await import('./components/MapRecords.tsx')
+    const empty = renderToStaticMarkup(
+      createElement(MapRecords, { proxy: 'https://p', busy: false, onFiles: () => {} }),
+    )
+    expect(empty).toContain('analyze top 25')
+    expect(empty).toMatch(/<button[^>]*disabled/)
+  })
+})

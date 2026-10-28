@@ -129,3 +129,29 @@ describe('trackmania.io api passthrough', () => {
     expect(upstream).not.toHaveBeenCalled()
   })
 })
+
+describe('tmx api passthrough', () => {
+  test('allows the online records listing with mapId and count only', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response('{"Results":[]}', { headers: { 'Content-Type': 'application/json' } }),
+      ),
+    )
+    const ok = await call(
+      `https://proxy.test/?url=${encodeURIComponent('https://trackmania.exchange/api/maps/getonlinerecords?mapId=151406&count=25')}`,
+    )
+    expect(ok.status).toBe(200)
+    expect(ok.headers.get('Content-Type')).toContain('application/json')
+    for (const bad of [
+      'https://trackmania.exchange/api/maps/getonlinerecords?mapId=151406&count=25&fields=x',
+      'https://trackmania.exchange/api/maps/getonlinerecords?mapId=abc&count=25',
+      'https://trackmania.exchange/api/maps?count=1',
+    ]) {
+      expect((await call(`https://proxy.test/?url=${encodeURIComponent(bad)}`)).status, bad).toBe(
+        403,
+      )
+    }
+  })
+})

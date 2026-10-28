@@ -13,6 +13,12 @@ const RULES = [
     cache: 86400,
   },
   {
+    host: 'trackmania.exchange',
+    path: /^\/api\/maps\/getonlinerecords$/,
+    query: { mapId: DIGITS, count: PAGE_LENGTH },
+    cache: 300,
+  },
+  {
     host: 'trackmania.io',
     path: /^\/api\/download\/ghost\/[A-Za-z0-9-]+$/,
     query: null,
