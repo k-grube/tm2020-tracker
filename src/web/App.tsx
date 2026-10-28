@@ -50,6 +50,8 @@ async function loadBaseline(): Promise<Baseline | null> {
 export function App() {
   const worker = useRef<Worker | null>(null)
   const pendingSelect = useRef<number | null>(null)
+  const baselineRef = useRef<Baseline | null>(null)
+  const filesRef = useRef<StoredFile[]>([])
   const [baseline, setBaseline] = useState<Baseline | null | undefined>(undefined)
   const [files, setFiles] = useState<StoredFile[]>([])
   const [result, setResult] = useState<Result | null>(null)
@@ -76,13 +78,13 @@ export function App() {
       }
     }
     worker.current = w
-    loadBaseline().then(setBaseline)
     return () => w.terminate()
   }, [])
 
   // every loaded file goes to the worker together so the cross-file signals cover the whole set
   const analyzeAll = (next: StoredFile[], select: number | null) => {
     setFiles(next)
+    filesRef.current = next
     if (next.length === 0) {
       setResult(null)
       setSelected(0)
@@ -94,26 +96,29 @@ export function App() {
     setBusy(true)
     pendingSelect.current = select
     const payload = next.map((f) => ({ name: f.name, bytes: f.bytes.slice().buffer }))
-    const msg: AnalyzeRequest = { type: 'analyze', files: payload, baseline: baseline ?? null }
+    const msg: AnalyzeRequest = { type: 'analyze', files: payload, baseline: baselineRef.current }
     worker.current.postMessage(
       msg,
       payload.map((p) => p.bytes),
     )
   }
 
-  // files kept from the last visit come back on load
+  // the baseline and the files kept from the last visit load together, anything dropped in the
+  // meantime is analyzed again once the baseline is in
   const restored = useRef(false)
   useEffect(() => {
     if (restored.current) {
       return
     }
     restored.current = true
-    listFiles().then((kept) => {
-      if (kept.length > 0) {
-        analyzeAll(kept, kept.length - 1)
+    Promise.all([loadBaseline(), listFiles()]).then(([b, kept]) => {
+      baselineRef.current = b
+      setBaseline(b)
+      const current = filesRef.current.length > 0 ? filesRef.current : kept
+      if (current.length > 0) {
+        analyzeAll(current, current.length - 1)
       }
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const addAndAnalyze = (incoming: StoredFile[]) => {
