@@ -5,6 +5,7 @@ import type { AnalyzeRequest, WorkerResponse } from './worker-protocol.ts'
 import { DropZone } from './components/DropZone.tsx'
 import { FileReportView } from './components/FileReportView.tsx'
 import { GroupsView } from './components/GroupsView.tsx'
+import { proxiedUrl, tmxRecordUrl } from './proxy.ts'
 
 interface Result {
   report: Report
@@ -12,6 +13,8 @@ interface Result {
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+// cors proxy in front of the download hosts, worker/proxy.js, unset means a plain download link
+const PROXY = (import.meta.env.VITE_PROXY_URL as string | undefined) || undefined
 
 // a missing file, a fetch error, or json without signals all mean no baseline
 async function loadBaseline(): Promise<Baseline | null> {
@@ -68,6 +71,25 @@ export function App() {
     )
   }
 
+  const fetchRecord = async (id: string) => {
+    if (!PROXY) {
+      return
+    }
+    setBusy(true)
+    try {
+      const res = await fetch(proxiedUrl(PROXY, tmxRecordUrl(id)))
+      if (!res.ok) {
+        throw new Error(`proxy ${res.status}: ${await res.text()}`)
+      }
+      const disposition = res.headers.get('Content-Disposition') ?? ''
+      const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? `${id}.Ghost.Gbx`
+      await analyze([new File([await res.arrayBuffer()], name)])
+    } catch (e) {
+      setBusy(false)
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
   const trimmed = uuid.trim()
   return (
     <main>
@@ -83,15 +105,16 @@ export function App() {
             spellCheck={false}
           />
         </label>{' '}
-        {UUID_RE.test(trimmed) && (
-          <a
-            href={`https://trackmania.exchange/getonlinerecord/${trimmed}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            download from TMX
-          </a>
-        )}
+        {UUID_RE.test(trimmed) &&
+          (PROXY ? (
+            <button type="button" onClick={() => fetchRecord(trimmed)} disabled={busy}>
+              fetch
+            </button>
+          ) : (
+            <a href={tmxRecordUrl(trimmed)} target="_blank" rel="noreferrer">
+              download from TMX
+            </a>
+          ))}
       </p>
       <p className="meta">
         {baseline === undefined

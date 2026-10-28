@@ -38,5 +38,17 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['worker/**/*.js'],
+    languageOptions: {
+      globals: {
+        fetch: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        Headers: 'readonly',
+        URL: 'readonly',
+      },
+    },
+  },
   prettier,
 )

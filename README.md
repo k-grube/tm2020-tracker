@@ -8,7 +8,17 @@ Output never says "cheat". Every signal is a raw measurement next to reference p
 
 Drop `.Ghost.Gbx` or `.Replay.Gbx` files on the page. Parsing and analysis run in a Web Worker in the browser, nothing is uploaded. Several files at once get the cross-file signals when they share a map or a login.
 
-The page never calls TMX or trackmania.io (no CORS). Paste a TMX online record uuid and the page links to `https://trackmania.exchange/getonlinerecord/<uuid>`, download that file and drop it.
+Paste a TMX online record uuid. Without a proxy the page links to `https://trackmania.exchange/getonlinerecord/<uuid>` (TMX and trackmania.io send no CORS headers), download that file and drop it. With `VITE_PROXY_URL` set at build time the page fetches it in place through the worker below.
+
+### Download proxy
+
+`worker/proxy.js` is a Cloudflare Worker: `GET /?url=<download url>`, allows only `trackmania.exchange/getonlinerecord/*`, `trackmania.exchange/recordgbx/*` and `trackmania.io/api/download/ghost/*`, only from the origins in its `ALLOWED_ORIGINS` variable, and streams the file back with CORS headers. No dependencies, deploy from the dashboard:
+
+1. dash.cloudflare.com, Workers & Pages, Create, Create Worker, name it, Deploy
+2. Edit code, replace the hello world with `worker/proxy.js`, Deploy
+3. Settings, Variables, add `ALLOWED_ORIGINS` = `https://k-grube.github.io,http://localhost:5173`
+4. GitHub repo, Settings, Secrets and variables, Actions, Variables, add `VITE_PROXY_URL` = the worker url
+5. local dev: `.env.local` with `VITE_PROXY_URL=https://<worker>.workers.dev`
 
 ## CLI
 
