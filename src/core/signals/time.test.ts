@@ -165,7 +165,7 @@ describe('metadata', () => {
     expect(r.level).toBe('info')
     expect(r.fired).toBe(false)
     expect(r.evidence.some((e) => e.includes('Trackmania date=2026-02-02'))).toBe(true)
-    expect(r.evidence.some((e) => e.includes('0x03092023') && e.includes('3 bytes'))).toBe(true)
+    expect(r.evidence.some((e) => e.includes('0x03092023'))).toBe(false)
     expect(r.evidence.some((e) => e.includes('login'))).toBe(true)
   })
 })

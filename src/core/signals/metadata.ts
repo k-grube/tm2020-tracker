@@ -1,11 +1,4 @@
-import { hex } from '../gbx/node.ts'
 import type { Detector } from './types.ts'
-
-function hexBytes(bytes: Uint8Array, n: number): string {
-  return Array.from(bytes.subarray(0, n))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join(' ')
-}
 
 export const metadata: Detector = (ctx) => {
   const g = ctx.ghost
@@ -25,12 +18,6 @@ export const metadata: Detector = (ctx) => {
     const v = g.validation
     evidence.push(`exe ${v.exeVersion}, os ${v.osKind}, cpu ${v.cpuKind}, title ${v.titleId}`)
     evidence.push(`race settings ${v.raceSettings || '-'}, validation seed ${v.validationSeed}`)
-  }
-  for (const [id, bytes] of g.rawChunks) {
-    evidence.push(`chunk ${hex(id)}: ${bytes.length} bytes, ${hexBytes(bytes, 16)}`)
-  }
-  if (g.unknownChunks.length > 0) {
-    evidence.push(`unknown skippable chunks: ${g.unknownChunks.map(hex).join(' ')}`)
   }
   for (const w of ctx.parsed.warnings) {
     evidence.push(`warning: ${w}`)
