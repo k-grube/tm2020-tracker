@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import { SIGNAL_IDS } from '../core/signals/types.ts'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { analyzeBytes } from '../core/pipeline.ts'
@@ -226,5 +227,17 @@ describe('FileTabs order', () => {
     const labels = [...html.matchAll(/role="tab"[^>]*>([^<]+)</g)].map((m) => m[1])
     expect(labels).toEqual(['alpha 1.000', 'Mid 1.000', 'Zed 1.000'])
     expect(html).toMatch(/aria-selected="true"[^>]*>Zed 1\.000</)
+  })
+})
+
+describe('Glossary', () => {
+  test('has an entry for every signal id', async () => {
+    const { Glossary } = await import('./components/Glossary.tsx')
+    const html = renderToStaticMarkup(createElement(Glossary))
+    for (const id of SIGNAL_IDS) {
+      expect(html, id).toContain(`<dt`)
+      expect(html, id).toContain(`>${id}<`)
+    }
+    expect(html).toContain('<details')
   })
 })

@@ -7,6 +7,7 @@ import { FileReportView } from './components/FileReportView.tsx'
 import { FileTabs } from './components/FileTabs.tsx'
 import { GroupsView } from './components/GroupsView.tsx'
 import { CampaignBrowser } from './components/CampaignBrowser.tsx'
+import { Glossary } from './components/Glossary.tsx'
 import { addFiles, type StoredFile } from './files.ts'
 import { isGbx, proxiedUrl, recordUrls } from './proxy.ts'
 import { recordGhostUrl } from './tmio.ts'
@@ -281,6 +282,7 @@ export function App() {
           <GroupsView groups={result.report.groups} files={result.report.files} />
         </>
       )}
+      <Glossary />
     </main>
   )
 }

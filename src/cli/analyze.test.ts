@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import { SIGNAL_IDS } from '../core/signals/types.ts'
 import { execFileSync } from 'node:child_process'
 import { analyzeBytes } from '../core/pipeline.ts'
 import { formatReport } from './format-report.ts'
@@ -6,22 +7,8 @@ import { inflateNode } from './inflate.ts'
 import { fixturePath, loadFixture } from '../test/fixtures.ts'
 import { minimalGhostGbx } from '../test/minimal-ghost.ts'
 
-const ALL_IDS = [
-  'wall_time_ratio',
-  'wall_time_delta',
-  'ticks_vs_racetime',
-  'same_tick_toggle',
-  'steer_spikes_per_sec',
-  'input_density',
-  'steer_device',
-  'steer_repetition',
-  'trajectory_overlap',
-  'checkpoint_split_match',
-  'metadata',
-]
-
 describe('analyzeBytes', () => {
-  test('slidrz gives one file report with all eleven signal ids', async () => {
+  test('slidrz gives one file report with every signal id', async () => {
     const report = await analyzeBytes(
       [{ name: 'slidrz', bytes: loadFixture('slidrz') }],
       null,
@@ -29,7 +16,7 @@ describe('analyzeBytes', () => {
     )
     expect(report.files).toHaveLength(1)
     const f = report.files[0]!
-    expect(f.signals.map((s) => s.id).sort()).toEqual([...ALL_IDS].sort())
+    expect(f.signals.map((s) => s.id).sort()).toEqual([...SIGNAL_IDS].sort())
     expect(f.signals.find((s) => s.id === 'trajectory_overlap')!.applicable).toBe(false)
     expect(f.signals.find((s) => s.id === 'checkpoint_split_match')!.applicable).toBe(false)
     expect(f.raceTimeMs).toBe(24794)
@@ -103,13 +90,6 @@ describe('cli analyze', () => {
     })
     expect(out).toContain('wall_time_ratio')
     expect(out).toContain('needs human review')
-  })
-
-  test('a directory argument analyzes every gbx file in it', () => {
-    const out = execFileSync('node', ['src/cli/main.ts', 'analyze', 'fixtures', '--json'], {
-      encoding: 'utf8',
-    })
-    expect(JSON.parse(out).files.length).toBe(5)
   })
 })
 

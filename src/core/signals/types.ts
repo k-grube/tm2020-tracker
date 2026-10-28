@@ -1,17 +1,20 @@
 import type { Ghost, InputEvent, ParsedFile, Sample } from '../model.ts'
 
-export type SignalId =
-  | 'wall_time_ratio'
-  | 'wall_time_delta'
-  | 'ticks_vs_racetime'
-  | 'same_tick_toggle'
-  | 'steer_spikes_per_sec'
-  | 'input_density'
-  | 'steer_device'
-  | 'steer_repetition'
-  | 'trajectory_overlap'
-  | 'checkpoint_split_match'
-  | 'metadata'
+export const SIGNAL_IDS = [
+  'wall_time_ratio',
+  'wall_time_delta',
+  'ticks_vs_racetime',
+  'same_tick_toggle',
+  'steer_spikes_per_sec',
+  'input_density',
+  'steer_device',
+  'steer_repetition',
+  'trajectory_overlap',
+  'checkpoint_split_match',
+  'metadata',
+] as const
+
+export type SignalId = (typeof SIGNAL_IDS)[number]
 
 // absolute: the engine makes it impossible, relative: outlier against a reference, info: context only
 export type SignalLevel = 'absolute' | 'relative' | 'info'
