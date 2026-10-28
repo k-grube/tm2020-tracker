@@ -7,9 +7,12 @@ export function DropZone({ onFiles, busy }: { onFiles: (files: File[]) => void; 
     setOver(false)
     onFiles(Array.from(e.dataTransfer.files))
   }
+  const border = over
+    ? 'border-blue-500 text-zinc-900 dark:text-zinc-100'
+    : 'border-zinc-300 text-zinc-500 hover:border-zinc-400 dark:border-zinc-700 dark:hover:border-zinc-500'
   return (
     <label
-      className={`dropzone${over ? ' over' : ''}`}
+      className={`mt-4 block cursor-pointer rounded-lg border-2 border-dashed p-9 text-center text-sm ${border}`}
       onDragOver={(e) => {
         e.preventDefault()
         setOver(true)
@@ -18,6 +21,7 @@ export function DropZone({ onFiles, busy }: { onFiles: (files: File[]) => void; 
       onDrop={onDrop}
     >
       <input
+        className="hidden"
         type="file"
         multiple
         accept=".gbx,.Gbx"

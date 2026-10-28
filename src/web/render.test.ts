@@ -41,8 +41,8 @@ describe('FileReportView', () => {
         expect(html).toContain(esc(fmtValue(s)))
         expect(html).toContain(esc(s.evidence[0]!))
       }
-      expect(html).toContain('<figcaption>steer</figcaption>')
-      expect(html).toContain('<caption>checkpoints</caption>')
+      expect(html).toMatch(/<figcaption[^>]*>steer<\/figcaption>/)
+      expect(html).toMatch(/<caption[^>]*>checkpoints<\/caption>/)
       expect((html.match(/<path class="series" d="M/g) ?? []).length).toBe(1)
     },
   )

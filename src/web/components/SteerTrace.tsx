@@ -36,19 +36,19 @@ export function SteerTrace({ steer }: { steer: Int8Array }) {
   }
 
   return (
-    <figure className="chart">
-      <figcaption>steer</figcaption>
+    <figure className="chart mt-5">
+      <figcaption className="mb-1 text-sm text-zinc-500">steer</figcaption>
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="steer-trace"
+        className="h-auto w-full touch-none rounded-md bg-zinc-50 dark:bg-zinc-900"
         onPointerMove={onMove}
         onPointerLeave={() => setHover(null)}
         role="img"
         aria-label="steer value over time"
       >
-        <line className="grid" x1={0} x2={WIDTH} y1={HEIGHT / 2} y2={HEIGHT / 2} />
-        <line className="grid" x1={0} x2={WIDTH} y1={0.5} y2={0.5} />
-        <line className="grid" x1={0} x2={WIDTH} y1={HEIGHT - 0.5} y2={HEIGHT - 0.5} />
+        <line className="gridline" x1={0} x2={WIDTH} y1={HEIGHT / 2} y2={HEIGHT / 2} />
+        <line className="gridline" x1={0} x2={WIDTH} y1={0.5} y2={0.5} />
+        <line className="gridline" x1={0} x2={WIDTH} y1={HEIGHT - 0.5} y2={HEIGHT - 0.5} />
         <path className="series" d={d} />
         {hover !== null && (
           <g className="crosshair">

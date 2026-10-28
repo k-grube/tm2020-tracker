@@ -16,6 +16,12 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // cors proxy in front of the download hosts, worker/proxy.js, unset means a plain download link
 const PROXY = (import.meta.env.VITE_PROXY_URL as string | undefined) || undefined
 
+const INPUT =
+  'w-[24rem] max-w-full rounded-md border border-zinc-300 bg-white px-2 py-1 font-mono text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100'
+const BUTTON =
+  'rounded-md bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50'
+const LINK = 'text-blue-600 hover:underline dark:text-blue-400'
+
 // a missing file, a fetch error, or json without signals all mean no baseline
 async function loadBaseline(): Promise<Baseline | null> {
   try {
@@ -92,38 +98,44 @@ export function App() {
 
   const trimmed = uuid.trim()
   return (
-    <main>
-      <h1>tm2020 replay analyzer</h1>
+    <main className="mx-auto max-w-5xl px-4 pt-6 pb-16">
+      <h1 className="text-xl font-semibold tracking-tight">tm2020 replay analyzer</h1>
       <DropZone onFiles={analyze} busy={busy} />
-      <p className="tmx">
-        <label>
-          TMX online record uuid{' '}
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+        <label className="flex flex-wrap items-center gap-2">
+          <span className="text-zinc-600 dark:text-zinc-400">TMX online record uuid</span>
           <input
+            className={INPUT}
             value={uuid}
             onChange={(e) => setUuid(e.target.value)}
             placeholder="e9beeecb-c76a-44dc-93db-e733acbd3998"
             spellCheck={false}
           />
-        </label>{' '}
+        </label>
         {UUID_RE.test(trimmed) &&
           (PROXY ? (
-            <button type="button" onClick={() => fetchRecord(trimmed)} disabled={busy}>
+            <button
+              type="button"
+              className={BUTTON}
+              onClick={() => fetchRecord(trimmed)}
+              disabled={busy}
+            >
               fetch
             </button>
           ) : (
-            <a href={tmxRecordUrl(trimmed)} target="_blank" rel="noreferrer">
+            <a className={LINK} href={tmxRecordUrl(trimmed)} target="_blank" rel="noreferrer">
               download from TMX
             </a>
           ))}
-      </p>
-      <p className="meta">
+      </div>
+      <p className="mt-2 text-sm text-zinc-500">
         {baseline === undefined
           ? 'baseline loading'
           : baseline
             ? `baseline ${baseline.files} records, ranks ${baseline.ranks[0]} to ${baseline.ranks[1]}`
             : 'no baseline'}
       </p>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
       {result && (
         <>
           {result.report.files.map((f, i) => (

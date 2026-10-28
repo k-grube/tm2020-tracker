@@ -62,20 +62,26 @@ export function InputTimeline({ events, ticks }: { events: InputEvent[]; ticks: 
   const plotW = WIDTH - LABEL_W
   const height = lanes.length * LANE_H
   return (
-    <figure className="chart">
-      <figcaption>inputs</figcaption>
+    <figure className="chart mt-5">
+      <figcaption className="mb-1 text-sm text-zinc-500">inputs</figcaption>
       <svg
         viewBox={`0 0 ${WIDTH} ${height}`}
-        className="input-timeline"
+        className="h-auto w-full rounded-md bg-zinc-50 dark:bg-zinc-900"
         role="img"
         aria-label="input timeline"
       >
         {lanes.map((lane, i) => (
           <g key={lane.kind} transform={`translate(0,${i * LANE_H})`}>
-            <text x={LABEL_W - 8} y={LANE_H / 2 + 4} textAnchor="end" className="lane-label">
+            <text x={LABEL_W - 8} y={LANE_H / 2 + 4} textAnchor="end">
               {lane.kind}
             </text>
-            <line className="grid" x1={LABEL_W} x2={WIDTH} y1={LANE_H - 0.5} y2={LANE_H - 0.5} />
+            <line
+              className="gridline"
+              x1={LABEL_W}
+              x2={WIDTH}
+              y1={LANE_H - 0.5}
+              y2={LANE_H - 0.5}
+            />
             {lane.segments.map(([a, b]) => (
               <rect
                 key={a}
