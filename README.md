@@ -8,7 +8,7 @@ Output never says "cheat". Every signal is a raw measurement next to reference p
 
 Drop `.Ghost.Gbx` or `.Replay.Gbx` files on the page. Parsing and analysis run in a Web Worker in the browser, nothing is uploaded. Several files at once get the cross-file signals when they share a map or a login.
 
-Paste a TMX online record uuid. Without a proxy the page links to `https://trackmania.exchange/getonlinerecord/<uuid>` (TMX and trackmania.io send no CORS headers), download that file and drop it. With `VITE_PROXY_URL` set at build time the page fetches it in place through the worker below.
+Paste a record uuid, a TMX replay id, or a download url from `trackmania.exchange/getonlinerecord/<uuid>`, `trackmania.exchange/recordgbx/<id>` or `trackmania.io/api/download/ghost/<uuid>`. The url is rebuilt from the id, nothing else is ever fetched. Without a proxy the page links to the download (TMX and trackmania.io send no CORS headers), download that file and drop it. With `VITE_PROXY_URL` set at build time the page fetches it in place through the worker below, a bare uuid is tried on TMX first, then trackmania.io.
 
 ### Download proxy
 

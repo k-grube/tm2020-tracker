@@ -5,14 +5,13 @@ import type { AnalyzeRequest, WorkerResponse } from './worker-protocol.ts'
 import { DropZone } from './components/DropZone.tsx'
 import { FileReportView } from './components/FileReportView.tsx'
 import { GroupsView } from './components/GroupsView.tsx'
-import { proxiedUrl, tmxRecordUrl } from './proxy.ts'
+import { proxiedUrl, recordUrls } from './proxy.ts'
 
 interface Result {
   report: Report
   viz: (FileViz | null)[]
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 // cors proxy in front of the download hosts, worker/proxy.js, unset means a plain download link
 const PROXY = (import.meta.env.VITE_PROXY_URL as string | undefined) || undefined
 
@@ -77,33 +76,41 @@ export function App() {
     )
   }
 
-  const fetchRecord = async (id: string) => {
+  // a bare uuid may live on either site, the first url that answers wins
+  const fetchRecord = async (urls: string[]) => {
     if (!PROXY) {
       return
     }
     setBusy(true)
     try {
-      const res = await fetch(proxiedUrl(PROXY, tmxRecordUrl(id)))
-      if (!res.ok) {
-        throw new Error(`proxy ${res.status}: ${await res.text()}`)
+      let last = ''
+      for (const url of urls) {
+        const res = await fetch(proxiedUrl(PROXY, url))
+        if (!res.ok) {
+          last = `proxy ${res.status}: ${await res.text()}`
+          continue
+        }
+        const disposition = res.headers.get('Content-Disposition') ?? ''
+        const name =
+          /filename="([^"]+)"/.exec(disposition)?.[1] ?? `${url.split('/').pop()}.Ghost.Gbx`
+        await analyze([new File([await res.arrayBuffer()], name)])
+        return
       }
-      const disposition = res.headers.get('Content-Disposition') ?? ''
-      const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? `${id}.Ghost.Gbx`
-      await analyze([new File([await res.arrayBuffer()], name)])
+      throw new Error(last)
     } catch (e) {
       setBusy(false)
       setError(e instanceof Error ? e.message : String(e))
     }
   }
 
-  const trimmed = uuid.trim()
+  const urls = recordUrls(uuid)
   return (
     <main className="mx-auto max-w-5xl px-4 pt-6 pb-16">
       <h1 className="text-xl font-semibold tracking-tight">tm2020 replay analyzer</h1>
       <DropZone onFiles={analyze} busy={busy} />
       <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
         <label className="flex flex-wrap items-center gap-2">
-          <span className="text-zinc-600 dark:text-zinc-400">TMX online record uuid</span>
+          <span className="text-zinc-600 dark:text-zinc-400">record uuid or url</span>
           <input
             className={INPUT}
             value={uuid}
@@ -112,19 +119,19 @@ export function App() {
             spellCheck={false}
           />
         </label>
-        {UUID_RE.test(trimmed) &&
+        {urls.length > 0 &&
           (PROXY ? (
             <button
               type="button"
               className={BUTTON}
-              onClick={() => fetchRecord(trimmed)}
+              onClick={() => fetchRecord(urls)}
               disabled={busy}
             >
               fetch
             </button>
           ) : (
-            <a className={LINK} href={tmxRecordUrl(trimmed)} target="_blank" rel="noreferrer">
-              download from TMX
+            <a className={LINK} href={urls[0]} target="_blank" rel="noreferrer">
+              download
             </a>
           ))}
       </div>
