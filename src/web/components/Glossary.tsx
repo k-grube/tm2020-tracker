@@ -1,47 +1,47 @@
 const ENTRIES: [string, string][] = [
   [
     'wall_time_delta',
-    'how much longer the recording took on the wall clock than the race timer says, in seconds. a slowed-down game keeps the clock running while the race timer crawls, and the gap grows with race length. normal records sit a second or two above zero, lag and freezes also land here, which is why one file is a question and a pattern across files is an answer',
+    'wall clock minus race timer, in seconds. slow-mo keeps the clock running while the timer crawls, so the gap grows with race length. clean records sit +0.2 to +2.2 s. a freeze or lag spike also adds seconds, check the other files of that player before reading anything into one',
   ],
   [
     'wall_time_ratio',
-    'the same gap as a factor, kept for the per-player view. the same factor on every file of one player is the slow-motion shape, a single high one is usually a freeze',
+    'same gap as a factor, used in the per-player view. look for the same factor on every file of one player',
   ],
   [
     'ticks_vs_racetime',
-    'the input stream has to run up to the finish line. one that stops short was cut or edited after the fact. inputs past the finish are normal, manual saves keep a few seconds',
+    'checks the input stream reaches the finish. inputs that stop early were cut or edited. extra ticks after the finish are normal, manual saves keep a few seconds',
   ],
   [
     'same_tick_toggle',
-    'a key pressed and released inside one 10 ms tick. fingers cannot do it, scripts that play inputs back do it constantly. counted per run, a handful in a long run shows up in clean records',
+    'counts keys pressed and released inside one 10 ms tick. input playback scripts produce these. clean records show 0 to 4 per run, fires at 10',
   ],
   [
     'steer_spikes_per_sec',
-    'how often the stick reverses direction, per second. in slow motion a hand gets time to make corrections nobody makes at full speed, so the count climbs. the 2021 investigation caught its cases on this number',
+    'stick direction reversals per second, averaged over the run. in slow-mo the count rises across the whole run because there is time to correct constantly. this is the 2021 investigation metric',
   ],
   [
     'input_density',
-    'inputs per second of race time, steer and everything else counted separately. far below a human points at a scripted low-input run, far above at mouse steering or a wiggle macro',
+    'inputs per race second, steer and other inputs counted separately. well below the reference suggests a scripted low-input run, well above suggests mouse steering or a macro',
   ],
   [
     'steer_device',
-    'keyboard, pad or mixed, read from the steer values in the file. keyboard only ever writes -127, 0 and 127. the reference ranges are split by device because the two play nothing alike',
+    'keyboard, pad or mixed, from the steer values in the file. keyboard only writes -127, 0 and 127. references are split by device',
   ],
   [
     'steer_repetition',
-    'the longest stretch of analog stick movement that repeats exactly somewhere later in the run. a hand does not reproduce half a second of stick values to the step, a recording played back twice does',
+    'longest stretch of analog stick values that repeats exactly later in the file. a repeat of 50 ticks or more to the step points at playback',
   ],
   [
     'trajectory_overlap',
-    'two records on the same map within 10 cm of each other for seconds at a time. different drivers diverge within a second of leaving the start, a copied or spliced ghost tracks the original for as long as the copy lasts. needs two files on the same map',
+    'two records on one map within 10 cm of each other for seconds. real drivers separate within a second of the start, a copied ghost tracks the original. needs two files on the same map',
   ],
   [
     'checkpoint_split_match',
-    'one player, two files, every checkpoint split identical to the millisecond. that is one run saved twice, not two runs. needs two files from the same login',
+    'one login, two files, every checkpoint split identical to the ms. means one run saved twice. needs two files from the same login',
   ],
   [
     'metadata',
-    'who drove it and on what: login, nickname, zone, club tag, map, car, game build, race settings including the Openplanet mode, validation seed. an odd build or Developer mode is a lead on its own',
+    'login, nick, zone, club tag, map, car, game build, race settings (openplanet mode), validation seed. investigate if there is an odd build or Developer mode',
   ],
 ]
 
@@ -52,9 +52,9 @@ export function Glossary() {
         what the checks look for
       </summary>
       <p className="mt-2 text-zinc-500">
-        absolute: the game does not produce it, one hit is enough. relative: outside the range of
-        top records with the same device, needs the baseline, two hits together mark the file. info:
-        shown, never fires. red bars on the steer trace mark the ticks a fired check points at.
+        absolute: the game cannot produce it, one hit flags the file. relative: outside the
+        top-record range for the device, needs the baseline, two hits flag the file. info: shown,
+        never fires. red bars on the steer trace mark the ticks a fired check points at
       </p>
       <dl className="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-[max-content_1fr]">
         {ENTRIES.map(([id, text]) => (
