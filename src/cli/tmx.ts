@@ -92,7 +92,8 @@ export function createTmxClient(fetchFn: typeof fetch, userAgent: string): TmxCl
         count: String(count),
       })
       const body = (await res.json()) as { Results: OnlineRecord[] }
-      return body.Results
+      // tmx ignores count here and always sends 50
+      return body.Results.slice(0, count)
     },
 
     async listReplays(mapId, count = 50) {

@@ -52,6 +52,23 @@ describe('createTmxClient', () => {
     expect(calls[0]!.url).toContain('mapId=1')
   })
 
+  test('listOnlineRecords cuts to count, tmx always sends 50', async () => {
+    const { fetchFn } = stubFetch(() => ({
+      json: {
+        Results: Array.from({ length: 5 }, (_, i) => ({
+          Position: i + 1,
+          RecordTime: 1000 + i,
+          DisplayName: 'p',
+          AccountId: 'a',
+          RecordId: `r${i}`,
+          RecordAt: 't',
+        })),
+      },
+    }))
+    const records = await createTmxClient(fetchFn, UA).listOnlineRecords(1, 2)
+    expect(records.map((r) => r.Position)).toEqual([1, 2])
+  })
+
   test('listOnlineRecords returns Results', async () => {
     const { fetchFn, calls } = stubFetch(() => ({
       json: {
