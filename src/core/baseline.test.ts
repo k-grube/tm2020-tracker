@@ -8,6 +8,7 @@ function reportWith(device: Device, wallDelta: number, name = 'f'): FileReport {
   return {
     name,
     login: 'p',
+    nickname: 'p',
     mapUid: 'm',
     raceTimeMs: 25000,
     device,

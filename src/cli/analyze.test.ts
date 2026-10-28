@@ -112,3 +112,14 @@ describe('cli analyze', () => {
     expect(JSON.parse(out).files.length).toBe(5)
   })
 })
+
+describe('file report identity', () => {
+  test('carries the nickname next to the login', async () => {
+    const report = await analyzeBytes(
+      [{ name: 'slidrz', bytes: loadFixture('slidrz') }],
+      null,
+      inflateNode,
+    )
+    expect(report.files[0]!.nickname).toBe('Slidrz')
+  })
+})

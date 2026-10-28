@@ -82,6 +82,7 @@ export interface Summary {
 export interface FileReport {
   name: string
   login: string
+  nickname: string
   mapUid: string
   raceTimeMs: number | null
   device: Device

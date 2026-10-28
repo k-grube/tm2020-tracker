@@ -90,3 +90,42 @@ describe('proxy worker', () => {
     expect(await res.text()).toContain('404')
   })
 })
+
+describe('trackmania.io api passthrough', () => {
+  const json = (body: unknown) =>
+    new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } })
+
+  test('allows the campaign list, a campaign and a map leaderboard, keeping the json content type', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ ok: 1 })),
+    )
+    for (const url of [
+      'https://trackmania.io/api/campaigns/seasonal/0',
+      'https://trackmania.io/api/campaign/seasonal/157584',
+      'https://trackmania.io/api/leaderboard/map/ypPmohQofd72MyTsIsijKfrJH98?offset=0&length=25',
+    ]) {
+      const res = await call(`https://proxy.test/?url=${encodeURIComponent(url)}`)
+      expect(res.status, url).toBe(200)
+      expect(res.headers.get('Content-Type')).toContain('application/json')
+      expect(res.headers.get('Cache-Control')).toBe('public, max-age=300')
+      expect(await res.json()).toEqual({ ok: 1 })
+    }
+  })
+
+  test('rejects other query parameters, long pages and other api paths', async () => {
+    const upstream = vi.fn()
+    vi.stubGlobal('fetch', upstream)
+    for (const bad of [
+      'https://trackmania.io/api/leaderboard/map/abc?offset=0&length=25&x=1',
+      'https://trackmania.io/api/leaderboard/map/abc?offset=0&length=500',
+      'https://trackmania.io/api/campaigns/seasonal/0?x=1',
+      'https://trackmania.io/api/players/find?search=x',
+      'https://trackmania.io/api/campaign/157584',
+    ]) {
+      const res = await call(`https://proxy.test/?url=${encodeURIComponent(bad)}`)
+      expect(res.status, bad).toBe(403)
+    }
+    expect(upstream).not.toHaveBeenCalled()
+  })
+})

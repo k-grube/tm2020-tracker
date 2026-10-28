@@ -53,10 +53,56 @@ describe('FileReportView', () => {
       bytes: loadFixture(n),
     }))
     const report = await analyzeBytes(files, null, inflateWeb)
-    const html = renderToStaticMarkup(createElement(GroupsView, { groups: report.groups }))
+    const html = renderToStaticMarkup(
+      createElement(GroupsView, { groups: report.groups, files: report.files }),
+    )
     expect(html).toContain('across files')
-    expect(html).toContain('trajectory_overlap: localReplay vs localPbReplay')
+    expect(html).toContain('2 files, 1 pair, 0 flagged')
+    expect(html).not.toContain('trajectory_overlap: localReplay')
     expect(html).toContain('login KrE23CqvT8-wmr21pF5rqQ')
+  })
+
+  test('lists only the flagged pairs, by nickname', async () => {
+    const pair = (a: string, b: string, fired: boolean) => ({
+      id: 'trajectory_overlap' as const,
+      level: 'relative' as const,
+      applicable: true,
+      fired,
+      value: fired ? 5200 : 0,
+      unit: 'ms',
+      evidence: [`longest overlap ${fired ? 5200 : 0} ms from 4000 ms, within 0.1 m`],
+      references: [],
+      pair: [a, b] as [string, string],
+    })
+    const files = ['a.Gbx', 'b.Gbx', 'c.Gbx'].map((name, i) => ({
+      name,
+      login: `l${i}`,
+      nickname: ['Ann', 'Bob', 'Cid'][i]!,
+      mapUid: 'm',
+      raceTimeMs: 1000,
+      device: 'pad' as const,
+      signals: [],
+      summary: { absoluteFired: [], relativeOutside: [], needsHumanReview: false },
+    }))
+    const groups = {
+      byMap: [
+        {
+          mapUid: 'm',
+          files: files.map((f) => f.name),
+          signals: [
+            pair('a.Gbx', 'b.Gbx', false),
+            pair('a.Gbx', 'c.Gbx', true),
+            pair('b.Gbx', 'c.Gbx', false),
+          ],
+        },
+      ],
+      byLogin: [],
+    }
+    const html = renderToStaticMarkup(createElement(GroupsView, { groups, files }))
+    expect(html).toContain('3 files, 3 pairs, 1 flagged')
+    expect((html.match(/<li/g) ?? []).length).toBe(1)
+    expect(html).toContain('Ann vs Cid')
+    expect(html).not.toContain('a.Gbx vs')
   })
 })
 
@@ -82,5 +128,103 @@ describe('SteerTrace scrollbar', () => {
     const { SteerTrace } = await import('./components/SteerTrace.tsx')
     const html = renderToStaticMarkup(createElement(SteerTrace, { steer: new Int8Array(1000) }))
     expect(html).not.toContain('role="scrollbar"')
+  })
+})
+
+describe('RecordTable', () => {
+  test('renders one row per record with an analyze button', async () => {
+    const { RecordTable } = await import('./components/CampaignBrowser.tsx')
+    const html = renderToStaticMarkup(
+      createElement(RecordTable, {
+        records: [
+          {
+            position: 1,
+            player: 'KarjeN',
+            playerId: 'p',
+            timeMs: 19988,
+            timestamp: '2026-10-21T16:48:15+00:00',
+            ghostId: 'g1',
+          },
+          {
+            position: 2,
+            player: 'hobbi.',
+            playerId: 'q',
+            timeMs: 20001,
+            timestamp: '2026-10-22T10:00:00+00:00',
+            ghostId: 'g2',
+          },
+        ],
+        busy: false,
+        onAnalyze: () => {},
+      }),
+    )
+    expect((html.match(/<tr/g) ?? []).length).toBe(3)
+    expect(html).toContain('KarjeN')
+    expect(html).toContain('19.988')
+    expect((html.match(/>analyze</g) ?? []).length).toBe(2)
+  })
+})
+
+describe('TrackBar', () => {
+  test('stretches the 800 unit track over the full width and places the thumb', async () => {
+    const { TrackBar } = await import('./components/SteerTrace.tsx')
+    const html = renderToStaticMarkup(
+      createElement(TrackBar, {
+        view: [620, 1860],
+        length: 2480,
+        onPointerDown: () => {},
+        onPointerMove: () => {},
+        onPointerUp: () => {},
+      }),
+    )
+    expect(html).toContain('preserveAspectRatio="none"')
+    expect(html).toContain('role="scrollbar"')
+    expect(html).toMatch(/class="thumb" x="200" y="0" width="400"/)
+  })
+})
+
+describe('FileTabs', () => {
+  test('one tab per file, the selected one marked, review dot on flagged files', async () => {
+    const { FileTabs } = await import('./components/FileTabs.tsx')
+    const html = renderToStaticMarkup(
+      createElement(FileTabs, {
+        entries: [
+          { name: 'a.Ghost.Gbx', nickname: 'Slidrz', raceTimeMs: 24794, needsHumanReview: false },
+          { name: 'b.Ghost.Gbx', nickname: 'hobbi.', raceTimeMs: 59323, needsHumanReview: true },
+        ],
+        selected: 1,
+        onSelect: () => {},
+        onRemove: () => {},
+        onClear: () => {},
+      }),
+    )
+    expect((html.match(/role="tab"/g) ?? []).length).toBe(2)
+    expect(html).toContain('Slidrz 24.794')
+    expect(html).toContain('hobbi. 59.323')
+    expect((html.match(/aria-selected="true"/g) ?? []).length).toBe(1)
+    expect((html.match(/class="[^"]*bg-red-600[^"]*"/g) ?? []).length).toBe(1)
+    expect(html).toContain('clear all')
+  })
+})
+
+describe('FileTabs order', () => {
+  test('tabs sort by label, case-insensitive, callbacks keep the original index', async () => {
+    const { FileTabs } = await import('./components/FileTabs.tsx')
+    const html = renderToStaticMarkup(
+      createElement(FileTabs, {
+        entries: [
+          { name: 'z.Ghost.Gbx', nickname: 'Zed', raceTimeMs: 1000, needsHumanReview: false },
+          { name: 'a.Ghost.Gbx', nickname: 'alpha', raceTimeMs: 1000, needsHumanReview: false },
+          { name: 'm.Ghost.Gbx', nickname: 'Mid', raceTimeMs: 1000, needsHumanReview: false },
+        ],
+        selected: 0,
+        onSelect: () => {},
+        onRemove: () => {},
+        onClear: () => {},
+      }),
+    )
+    const labels = [...html.matchAll(/role="tab"[^>]*>([^<]+)</g)].map((m) => m[1])
+    expect(labels).toEqual(['alpha 1.000', 'Mid 1.000', 'Zed 1.000'])
+    expect(html).toMatch(/aria-selected="true"[^>]*>Zed 1\.000</)
   })
 })

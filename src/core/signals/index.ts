@@ -52,6 +52,7 @@ export function errorReport(name: string, message: string): FileReport {
   return {
     name,
     login: '',
+    nickname: '',
     mapUid: '',
     raceTimeMs: null,
     device: 'unknown',
@@ -76,6 +77,7 @@ export function analyzeFile(ctx: FileContext, baseline: Baseline | null): FileRe
   return {
     name: ctx.name,
     login: ctx.ghost.login,
+    nickname: ctx.ghost.nickname,
     mapUid: ctx.ghost.mapUid,
     raceTimeMs: ctx.ghost.raceTimeMs,
     device: ctx.device,

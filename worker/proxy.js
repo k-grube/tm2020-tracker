@@ -1,15 +1,52 @@
-// cloudflare worker: cors proxy for ghost downloads, GET /?url=<https tmx or trackmania.io download>
+// cloudflare worker: cors proxy for the page, GET /?url=<https tmx or trackmania.io url>
 // env ALLOWED_ORIGINS: comma separated page origins, default is the github pages origin
 
-const ALLOWED_PATHS = new Map([
-  ['trackmania.exchange', /^\/(getonlinerecord|recordgbx)\/[A-Za-z0-9-]+$/],
-  ['trackmania.io', /^\/api\/download\/ghost\/[A-Za-z0-9-]+$/],
-])
+const DIGITS = /^\d{1,6}$/
+const PAGE_LENGTH = /^([1-9]\d?|100)$/
+
+// host, path, allowed query keys with their value pattern (null: no query at all), edge cache seconds
+const RULES = [
+  {
+    host: 'trackmania.exchange',
+    path: /^\/(getonlinerecord|recordgbx)\/[A-Za-z0-9-]+$/,
+    query: null,
+    cache: 86400,
+  },
+  {
+    host: 'trackmania.io',
+    path: /^\/api\/download\/ghost\/[A-Za-z0-9-]+$/,
+    query: null,
+    cache: 86400,
+  },
+  { host: 'trackmania.io', path: /^\/api\/campaigns\/seasonal\/\d+$/, query: null, cache: 300 },
+  { host: 'trackmania.io', path: /^\/api\/campaign\/seasonal\/\d+$/, query: null, cache: 300 },
+  {
+    host: 'trackmania.io',
+    path: /^\/api\/leaderboard\/map\/[A-Za-z0-9_-]+$/,
+    query: { offset: DIGITS, length: PAGE_LENGTH },
+    cache: 300,
+  },
+]
 const DEFAULT_ORIGINS = 'https://k-grube.github.io'
 const USER_AGENT = 'tm2020-tracker/0.1 (+https://github.com/k-grube/tm2020-tracker)'
 
 function reply(status, body, cors, extra = {}) {
   return new Response(body, { status, headers: { ...cors, ...extra } })
+}
+
+function matchRule(target) {
+  for (const rule of RULES) {
+    if (rule.host !== target.hostname || !rule.path.test(target.pathname)) {
+      continue
+    }
+    const params = [...target.searchParams.entries()]
+    if (rule.query === null) {
+      return params.length === 0 ? rule : null
+    }
+    const ok = params.every(([k, v]) => rule.query[k] !== undefined && rule.query[k].test(v))
+    return ok ? rule : null
+  }
+  return null
 }
 
 export default {
@@ -36,13 +73,8 @@ export default {
     } catch {
       return reply(400, 'url parameter missing or invalid', cors)
     }
-    const path = ALLOWED_PATHS.get(target.hostname)
-    if (
-      target.protocol !== 'https:' ||
-      !path ||
-      !path.test(target.pathname) ||
-      raw.includes('..')
-    ) {
+    const rule = target.protocol === 'https:' && !raw.includes('..') ? matchRule(target) : null
+    if (!rule) {
       return reply(403, 'url not allowed', cors)
     }
     const upstream = await fetch(target.toString(), { headers: { 'User-Agent': USER_AGENT } })
@@ -50,8 +82,8 @@ export default {
       return reply(502, `upstream ${upstream.status}`, cors)
     }
     const headers = new Headers(cors)
-    headers.set('Content-Type', 'application/octet-stream')
-    headers.set('Cache-Control', 'public, max-age=86400')
+    headers.set('Content-Type', upstream.headers.get('Content-Type') ?? 'application/octet-stream')
+    headers.set('Cache-Control', `public, max-age=${rule.cache}`)
     const disposition = upstream.headers.get('Content-Disposition')
     if (disposition) {
       headers.set('Content-Disposition', disposition)
