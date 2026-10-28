@@ -26,9 +26,7 @@ export function DropZone({ onFiles, busy }: { onFiles: (files: File[]) => void; 
           e.target.value = ''
         }}
       />
-      <span>
-        {busy ? 'analyzing' : 'drop Ghost.Gbx or Replay.Gbx files here, or click to pick'}
-      </span>
+      <span>{busy ? 'analyzing' : 'drop Ghost.Gbx or Replay.Gbx, or click'}</span>
     </label>
   )
 }

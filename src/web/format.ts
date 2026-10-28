@@ -19,7 +19,7 @@ export function fmtValue(s: SignalResult): string {
 
 export function fmtRange(r: Reference): string {
   if (r.low !== null && r.high !== null) {
-    return `typical range ${fmtNum(r.low)} to ${fmtNum(r.high)}`
+    return `${fmtNum(r.low)} to ${fmtNum(r.high)}`
   }
   if (r.high !== null) {
     return `up to ${fmtNum(r.high)}`

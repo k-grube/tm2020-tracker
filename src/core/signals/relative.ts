@@ -12,7 +12,7 @@ export function baselineStat(
 export function baselineReference(stat: BaselineStat, device: Device): Reference {
   return {
     source: 'baseline',
-    label: `typical top records (ranks ${BASELINE_RANKS[0]}-${BASELINE_RANKS[1]}), ${device}, n=${stat.n}`,
+    label: `top records ${BASELINE_RANKS[0]}-${BASELINE_RANKS[1]}, ${device}, n=${stat.n}`,
     low: stat.q1,
     high: stat.q3,
   }

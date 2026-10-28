@@ -72,10 +72,6 @@ export function App() {
   return (
     <main>
       <h1>tm2020 replay analyzer</h1>
-      <p className="lede">
-        drop Trackmania 2020 ghost or replay files, analysis runs in this browser tab, nothing is
-        uploaded.
-      </p>
       <DropZone onFiles={analyze} busy={busy} />
       <p className="tmx">
         <label>
@@ -96,15 +92,13 @@ export function App() {
             download from TMX
           </a>
         )}
-        <span className="hint"> then drop the downloaded file above</span>
       </p>
       <p className="meta">
-        baseline:{' '}
         {baseline === undefined
-          ? 'loading'
+          ? 'baseline loading'
           : baseline
-            ? `${baseline.files} files, ranks ${baseline.ranks[0]} to ${baseline.ranks[1]}, built ${baseline.builtAt}`
-            : 'none, relative signals show raw values only'}
+            ? `baseline ${baseline.files} records, ranks ${baseline.ranks[0]} to ${baseline.ranks[1]}`
+            : 'no baseline'}
       </p>
       {error && <p className="error">{error}</p>}
       {result && (

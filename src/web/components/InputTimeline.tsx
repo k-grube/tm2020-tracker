@@ -63,7 +63,7 @@ export function InputTimeline({ events, ticks }: { events: InputEvent[]; ticks: 
   const height = lanes.length * LANE_H
   return (
     <figure className="chart">
-      <figcaption>inputs held over {(ticks / 100).toFixed(2)} s</figcaption>
+      <figcaption>inputs</figcaption>
       <svg
         viewBox={`0 0 ${WIDTH} ${height}`}
         className="input-timeline"

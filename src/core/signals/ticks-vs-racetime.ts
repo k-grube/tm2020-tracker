@@ -23,11 +23,9 @@ export const ticksVsRaceTime: Detector = (ctx) => {
   if (ctx.decodedTicks !== null && ctx.decodedTicks !== input.ticks) {
     evidence.push(`decoded ${ctx.decodedTicks} of ${input.ticks} ticks, the data ends early`)
   }
-  evidence.push(
-    fired
-      ? `inputs stop ${-value} ms before the finish`
-      : `inputs cover the finish (${value >= 0 ? '+' : ''}${value} ms)`,
-  )
+  if (fired) {
+    evidence.push(`inputs stop ${-value} ms before the finish`)
+  }
   return {
     id: 'ticks_vs_racetime',
     level: 'absolute',

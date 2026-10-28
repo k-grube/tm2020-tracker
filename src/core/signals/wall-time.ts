@@ -25,14 +25,12 @@ export const wallTimeRatio: Detector = (ctx, baseline) => {
   }
   const [wallSec, raceSec, source] = w
   const ratio = wallSec / raceSec
-  const uncertainty = WALL_TIME_RESOLUTION_S / raceSec
   const r = relativeResult(
     'wall_time_ratio',
     ratio,
     'ratio',
     [
       `wall ${wallSec} s (+-${WALL_TIME_RESOLUTION_S} s, chunk ${source}), race ${raceSec.toFixed(3)} s`,
-      `ratio ${ratio.toFixed(3)} +-${uncertainty.toFixed(3)} from the 1 s wall clock resolution`,
     ],
     baseline,
     ctx.device,
@@ -54,7 +52,6 @@ export const wallTimeDelta: Detector = (ctx, baseline) => {
     's',
     [
       `wall ${wallSec} s (+-${WALL_TIME_RESOLUTION_S} s, chunk ${source}) minus race ${raceSec.toFixed(3)} s`,
-      `slow motion at speed s adds race x (1/s - 1) seconds, lag adds a few`,
     ],
     baseline,
     ctx.device,

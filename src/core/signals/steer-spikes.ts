@@ -5,13 +5,13 @@ import type { Detector, Reference } from './types.ts'
 const REFERENCES: Reference[] = [
   {
     source: '2021',
-    label: '2021 TMX investigation, leaderboard average spikes/s',
+    label: '2021 leaderboard average',
     low: null,
     high: REF_2021.avgSpikesPerSec,
   },
   {
     source: '2021',
-    label: '2021 TMX investigation, average of per-replay max spikes/s',
+    label: '2021 average of per-replay max',
     low: null,
     high: REF_2021.avgMaxSpikesPerSec,
   },

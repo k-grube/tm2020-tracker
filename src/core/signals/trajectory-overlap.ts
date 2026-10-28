@@ -50,13 +50,11 @@ export function trajectoryOverlap(a: FileContext, b: FileContext): SignalResult 
   }
   const posA = interpolator(a.samples)
   const posB = interpolator(b.samples)
-  let steps = 0
   let run = 0
   let runStart = start
   let best = 0
   let bestStart = start
   for (let t = start; t <= end; t += TICK_MS) {
-    steps++
     const pa = posA(t)
     const pb = posB(t)
     const d = Math.hypot(pa[0] - pb[0], pa[1] - pb[1], pa[2] - pb[2])
@@ -81,10 +79,7 @@ export function trajectoryOverlap(a: FileContext, b: FileContext): SignalResult 
     fired: value >= TRAJECTORY_MIN_WINDOW_MS,
     value,
     unit: 'ms',
-    evidence: [
-      `longest overlap ${value} ms starting at ${bestStart} ms (within ${TRAJECTORY_EPS_M} m), fires at ${TRAJECTORY_MIN_WINDOW_MS} ms`,
-      `compared ${steps} steps from ${start} ms to ${end} ms, first ${TRAJECTORY_SKIP_START_MS} ms skipped`,
-    ],
+    evidence: [`longest overlap ${value} ms from ${bestStart} ms, within ${TRAJECTORY_EPS_M} m`],
     references: [],
   }
 }

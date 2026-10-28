@@ -49,10 +49,7 @@ export const sameTickToggle: Detector = (ctx) => {
     fired: count >= SAME_TICK_MIN_COUNT,
     value: count,
     unit: 'toggles',
-    evidence: [
-      `${count} press+release pairs within ${SAME_TICK_MAX_GAP_TICKS} tick (${SAME_TICK_MAX_GAP_TICKS * TICK_MS} ms), fires at ${SAME_TICK_MIN_COUNT}`,
-      ...listed,
-    ],
+    evidence: [`${count} one-tick toggles`, ...listed],
     references: [],
   }
 }

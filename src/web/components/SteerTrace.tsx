@@ -37,7 +37,7 @@ export function SteerTrace({ steer }: { steer: Int8Array }) {
 
   return (
     <figure className="chart">
-      <figcaption>steer, -127 to 127 over {(steer.length / 100).toFixed(2)} s</figcaption>
+      <figcaption>steer</figcaption>
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="steer-trace"
