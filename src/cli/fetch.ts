@@ -1,4 +1,5 @@
 import type { TmxClient } from './tmx.ts'
+import type { TmioClient } from './tmio.ts'
 
 export interface FetchFs {
   writeFile(path: string, data: Uint8Array | string): void
@@ -7,8 +8,10 @@ export interface FetchFs {
 
 export interface FetchOptions {
   client: TmxClient
+  tmio?: TmioClient
   out: string
   map?: number
+  campaign?: number
   count: number
   uploads: boolean
   ghost?: string
@@ -20,6 +23,7 @@ export interface IndexEntry {
   replayId: number | null
   position: number
   mapId: number
+  mapUid?: string
   recordTimeMs: number
 }
 
@@ -90,8 +94,33 @@ export async function fetchCommand(
         recordTimeMs: rec.RecordTime,
       })
     }
+  } else if (opts.campaign !== undefined) {
+    if (!opts.tmio) {
+      throw new Error('fetch --campaign needs a trackmania.io client')
+    }
+    const campaign = await opts.tmio.campaign(opts.campaign)
+    lines.push(`${campaign.name}: ${campaign.maps.length} maps`)
+    let first = true
+    for (const m of campaign.maps) {
+      const records = await opts.tmio.leaderboard(m.mapUid, opts.count)
+      for (const rec of records) {
+        if (!first) {
+          await sleep()
+        }
+        first = false
+        const dl = await opts.tmio.downloadGhost(rec.url, rec.player.name, rec.time, m.name)
+        save(dl.filename, dl.bytes, {
+          recordId: rec.url.split('/').pop() ?? null,
+          replayId: null,
+          position: rec.position,
+          mapId: 0,
+          mapUid: m.mapUid,
+          recordTimeMs: rec.time,
+        })
+      }
+    }
   } else {
-    throw new Error('fetch needs --map, --ghost or --search')
+    throw new Error('fetch needs --map, --campaign, --ghost or --search')
   }
 
   fs.writeFile(indexPath, JSON.stringify(index, null, 2) + '\n')

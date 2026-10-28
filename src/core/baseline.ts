@@ -2,7 +2,7 @@ import type { Baseline, BaselineStat, Device, FileReport, SignalId } from './sig
 
 // relative signals get a reference range, everything else has none
 const RELATIVE_IDS: SignalId[] = [
-  'wall_time_ratio',
+  'wall_time_delta',
   'steer_spikes_per_sec',
   'input_density',
   'steer_repetition',

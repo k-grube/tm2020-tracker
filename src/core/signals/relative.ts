@@ -18,9 +18,17 @@ export function baselineReference(stat: BaselineStat, device: Device): Reference
   }
 }
 
-export function outsideFence(value: number, stat: BaselineStat): boolean {
+// a population with no spread (q1 == q3) gives no fence, the value is shown without a verdict
+// highOnly: only values above the fence count, for signals where less is never suspicious
+export function outsideFence(value: number, stat: BaselineStat, highOnly = false): boolean {
   const iqr = stat.q3 - stat.q1
-  return value < stat.q1 - TUKEY_K * iqr || value > stat.q3 + TUKEY_K * iqr
+  if (iqr === 0) {
+    return false
+  }
+  if (value > stat.q3 + TUKEY_K * iqr) {
+    return true
+  }
+  return !highOnly && value < stat.q1 - TUKEY_K * iqr
 }
 
 // relative signal: raw value next to references, fires only against a baseline
@@ -32,13 +40,14 @@ export function relativeResult(
   baseline: Baseline | null,
   device: Device,
   extraReferences: Reference[] = [],
+  highOnly = false,
 ): SignalResult {
   const stat = baselineStat(baseline, id, device)
   return {
     id,
     level: 'relative',
     applicable: true,
-    fired: stat ? outsideFence(value, stat) : false,
+    fired: stat ? outsideFence(value, stat, highOnly) : false,
     value,
     unit,
     evidence,

@@ -16,13 +16,14 @@ Node 22+, no build step.
 
 ```
 node src/cli/main.ts dump <file> [--json] [--events N]
-node src/cli/main.ts fetch (--map <tmxMapId> [--count N] [--uploads] | --ghost <uuid> | --search <name>) --out <dir>
+node src/cli/main.ts fetch (--map <tmxMapId> [--count N] [--uploads] | --campaign <tmioCampaignId> [--count N] | --ghost <uuid> | --search <name>) --out <dir>
 node src/cli/main.ts analyze <file|dir>... [--json] [--baseline <file>]
 node src/cli/main.ts baseline <dir> --out <file> [--ranks lo:hi]
 ```
 
 - `dump`: chunk tree, decoded fields, hex of unknown chunks, first N input events
 - `fetch --map`: lists TMX online records for a map and downloads each as `.Ghost.Gbx`, `--uploads` switches to user-uploaded replays. `--search` prints matching TMX map ids. Writes an `index.json` next to the files with position, map id, record time and record or replay id
+- `fetch --campaign`: top N Nadeo records of every map in an official campaign through trackmania.io, the id is the number in `trackmania.io/#/campaigns/seasonal/<id>`. World records of the current campaign: `fetch --campaign 157584 --count 1 --out fixtures/wr` then `analyze fixtures/wr --baseline public/baseline.json`
 - `analyze`: report per file, cross-file signals when files share a map or login, `--json` prints the same report the web page builds
 - `baseline`: runs every single-file signal over a directory of fetched records and writes median, interquartile range and sample count per signal and per steer device. Ranks 10 to 50 by default, the top of a leaderboard is the polluted part. The result describes typical top records, not clean runs
 
@@ -32,7 +33,7 @@ node src/cli/main.ts baseline <dir> --out <file> [--ranks lo:hi]
 | ------------------------ | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `wall_time_ratio`        | relative            | wall-clock duration of the recording (chunk `0x0309202C`, 1 s resolution) divided by race time. Slow-motion pushes this above 1 by a stable factor. Lag also pushes it above 1, so one file proves nothing, a stable ratio across a player's files is the pattern |
 | `ticks_vs_racetime`      | absolute            | `ticks * 10 + start offset` vs race time, tolerance 2 ticks. Fires on a shortfall, truncated or edited inputs. Manual saves can carry extra ticks after the finish, those do not fire                                                                             |
-| `same_tick_toggle`       | absolute            | an input pressed and released within one 10 ms tick, counted, first timestamps listed. Fires at 3                                                                                                                                                                 |
+| `same_tick_toggle`       | absolute            | an input pressed and released within one 10 ms tick, counted, first timestamps listed. Fires at 10, legit top records show up to 4 per run                                                                                                                        |
 | `steer_spikes_per_sec`   | relative            | the 2021 metric. Steer direction changes per 1 s window ignoring deltas below 4 of 127. Average and max window. Reference: 2021 leaderboard average about 3, average of per-replay max about 6 (TMUF data)                                                        |
 | `input_density`          | relative            | input events per race second, steer and other inputs separately. Low values on long maps are the low-input look                                                                                                                                                   |
 | `steer_device`           | info                | keyboard (only -127, 0, 127 seen), pad (analog range), mixed. Baseline statistics are split by this                                                                                                                                                               |
@@ -59,7 +60,7 @@ npm run lint
 npm run dev
 ```
 
-Fixtures live in `fixtures/` and are tracked, with `*.dump.json` goldens next to them. `fetch` output under `fixtures/baseline/` is git-ignored. Pages deploys from `main` via `.github/workflows/pages.yml`, base path `/tm2020-tracker/`.
+Fixtures live in `fixtures/` and are tracked, with `*.dump.json` goldens next to them. `fetch` output in any `fixtures/` subdirectory is git-ignored. Pages deploys from `main` via `.github/workflows/pages.yml`, base path `/tm2020-tracker/`.
 
 ## Prior art
 

@@ -8,7 +8,7 @@ import type {
   Summary,
 } from './types.ts'
 
-import { wallTimeRatio } from './wall-time.ts'
+import { wallTimeDelta, wallTimeRatio } from './wall-time.ts'
 import { ticksVsRaceTime } from './ticks-vs-racetime.ts'
 import { metadata } from './metadata.ts'
 import { sameTickToggle } from './same-tick-toggle.ts'
@@ -21,6 +21,7 @@ import { buildGroups } from './groups.ts'
 
 export const DETECTORS: Detector[] = [
   wallTimeRatio,
+  wallTimeDelta,
   ticksVsRaceTime,
   sameTickToggle,
   steerSpikes,

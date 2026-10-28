@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { inflateSync } from 'node:zlib'
-import { wallTimeRatio } from './wall-time.ts'
+import { wallTimeDelta, wallTimeRatio } from './wall-time.ts'
 import { ticksVsRaceTime } from './ticks-vs-racetime.ts'
 import { metadata } from './metadata.ts'
 import { buildContext } from './context.ts'
@@ -17,10 +17,10 @@ describe('wall_time_ratio', () => {
     ghost: { raceTimeMs: 25000, wallTime: { startUnixSec: 100, endUnixSec: 130, source: '02C' } },
   })
 
-  test('30 s wall over 25 s race is 1.2 and does not fire without a baseline', () => {
+  test('30 s wall over 25 s race is 1.2, shown as info', () => {
     const r = wallTimeRatio(ctx, null)
     expect(r.id).toBe('wall_time_ratio')
-    expect(r.level).toBe('relative')
+    expect(r.level).toBe('info')
     expect(r.applicable).toBe(true)
     expect(r.value).toBeCloseTo(1.2)
     expect(r.fired).toBe(false)
@@ -28,22 +28,49 @@ describe('wall_time_ratio', () => {
     expect(r.references).toEqual([])
   })
 
-  test('fires with a baseline when outside the fence', () => {
+  test('never fires, even with a baseline that puts it outside the fence', () => {
     const baseline = fakeBaseline('wall_time_ratio', 'pad', { median: 1.02, q1: 1.0, q3: 1.05 })
     const r = wallTimeRatio(ctx, baseline)
-    expect(r.fired).toBe(true)
-    expect(r.references[0]).toMatchObject({ source: 'baseline', low: 1.0, high: 1.05 })
-  })
-
-  test('does not fire with a baseline when inside the fence', () => {
-    const baseline = fakeBaseline('wall_time_ratio', 'pad', { median: 1.2, q1: 1.1, q3: 1.3 })
-    expect(wallTimeRatio(ctx, baseline).fired).toBe(false)
+    expect(r.fired).toBe(false)
+    expect(r.level).toBe('info')
   })
 
   test('not applicable without wall time', () => {
     const r = wallTimeRatio(fakeCtx(), null)
     expect(r.applicable).toBe(false)
     expect(r.value).toBeNull()
+  })
+})
+
+describe('wall_time_delta', () => {
+  const ctx = fakeCtx({
+    device: 'pad',
+    ghost: { raceTimeMs: 25000, wallTime: { startUnixSec: 100, endUnixSec: 130, source: '02C' } },
+  })
+
+  test('30 s wall over 25 s race is 5 s and does not fire without a baseline', () => {
+    const r = wallTimeDelta(ctx, null)
+    expect(r.id).toBe('wall_time_delta')
+    expect(r.level).toBe('relative')
+    expect(r.value).toBe(5)
+    expect(r.unit).toBe('s')
+    expect(r.fired).toBe(false)
+  })
+
+  test('fires with a baseline when above the fence', () => {
+    const baseline = fakeBaseline('wall_time_delta', 'pad', { median: 1.5, q1: 1.1, q3: 1.8 })
+    const r = wallTimeDelta(ctx, baseline)
+    expect(r.fired).toBe(true)
+    expect(r.references[0]).toMatchObject({ source: 'baseline', low: 1.1, high: 1.8 })
+  })
+
+  test('does not fire with a baseline when inside the fence', () => {
+    const baseline = fakeBaseline('wall_time_delta', 'pad', { median: 5, q1: 4, q3: 6 })
+    expect(wallTimeDelta(ctx, baseline).fired).toBe(false)
+  })
+
+  test('not applicable without wall time', () => {
+    expect(wallTimeDelta(fakeCtx(), null).applicable).toBe(false)
   })
 })
 
@@ -169,5 +196,18 @@ describe('ticks_vs_racetime, decoded ticks', () => {
     const r = ticksVsRaceTime(ctx, null)
     expect(r.fired).toBe(true)
     expect(r.evidence.join(' ')).toMatch(/decoded \d+ of 2480 ticks/)
+  })
+})
+
+describe('wall_time_delta, one-sided fence', () => {
+  test('a wall time shorter than typical does not fire, only extra seconds are suspicious', () => {
+    const ctx = fakeCtx({
+      device: 'pad',
+      ghost: { raceTimeMs: 25000, wallTime: { startUnixSec: 100, endUnixSec: 125, source: '02C' } },
+    })
+    const baseline = fakeBaseline('wall_time_delta', 'pad', { median: 1.5, q1: 1.1, q3: 1.8 })
+    const r = wallTimeDelta(ctx, baseline)
+    expect(r.value).toBe(0)
+    expect(r.fired).toBe(false)
   })
 })

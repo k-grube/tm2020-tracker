@@ -17,12 +17,12 @@ const straightLine = (n: number, offset = 0): [number, number, number][] =>
 
 describe('trajectory_overlap', () => {
   test('identical sample series overlap for the full length minus the start skip', () => {
-    const a = fakeCtx({ name: 'a', samples: fakeSamples(straightLine(500)) })
-    const b = fakeCtx({ name: 'b', samples: fakeSamples(straightLine(500)) })
+    const a = fakeCtx({ name: 'a', samples: fakeSamples(straightLine(1000)) })
+    const b = fakeCtx({ name: 'b', samples: fakeSamples(straightLine(1000)) })
     const r = trajectoryOverlap(a, b)
     expect(r.level).toBe('relative')
     expect(r.applicable).toBe(true)
-    expect(r.value).toBe(4000)
+    expect(r.value).toBe(6000)
     expect(r.fired).toBe(true)
   })
 
@@ -36,8 +36,8 @@ describe('trajectory_overlap', () => {
 
   test('a short shared stretch below the window does not fire', () => {
     const shared = straightLine(150)
-    const a = fakeCtx({ name: 'a', samples: fakeSamples([...straightLine(200, 50), ...shared]) })
-    const b = fakeCtx({ name: 'b', samples: fakeSamples([...straightLine(200, 90), ...shared]) })
+    const a = fakeCtx({ name: 'a', samples: fakeSamples([...straightLine(450, 50), ...shared]) })
+    const b = fakeCtx({ name: 'b', samples: fakeSamples([...straightLine(450, 90), ...shared]) })
     const r = trajectoryOverlap(a, b)
     expect(r.value).toBe(1500)
     expect(r.fired).toBe(false)

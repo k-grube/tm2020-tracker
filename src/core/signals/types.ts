@@ -2,6 +2,7 @@ import type { Ghost, InputEvent, ParsedFile, Sample } from '../model.ts'
 
 export type SignalId =
   | 'wall_time_ratio'
+  | 'wall_time_delta'
   | 'ticks_vs_racetime'
   | 'same_tick_toggle'
   | 'steer_spikes_per_sec'

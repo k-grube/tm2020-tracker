@@ -8,6 +8,7 @@ import { minimalGhostGbx } from '../test/minimal-ghost.ts'
 
 const ALL_IDS = [
   'wall_time_ratio',
+  'wall_time_delta',
   'ticks_vs_racetime',
   'same_tick_toggle',
   'steer_spikes_per_sec',
@@ -20,7 +21,7 @@ const ALL_IDS = [
 ]
 
 describe('analyzeBytes', () => {
-  test('slidrz gives one file report with all ten signal ids', async () => {
+  test('slidrz gives one file report with all eleven signal ids', async () => {
     const report = await analyzeBytes(
       [{ name: 'slidrz', bytes: loadFixture('slidrz') }],
       null,

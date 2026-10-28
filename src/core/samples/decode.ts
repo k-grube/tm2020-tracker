@@ -23,8 +23,9 @@ function decodeVehicle(timeMs: number, buf: Uint8Array): Sample {
   return { timeMs, position, speedMs }
 }
 
-// decompressed CPlugEntRecordData body, vehicle entities only
-// samples are inline records below version 11 and column delta-coded from 11 on
+// decompressed CPlugEntRecordData body, the vehicle element with the most samples is the car
+// (maps carry short-lived vehicle-class objects too), samples are inline records below
+// version 11 and column delta-coded from 11 on
 export async function decodeSamples(data: EntRecordData, inflate: Inflate): Promise<Sample[]> {
   if (data.uncompressedSize < 0 || data.uncompressedSize > MAX_RECORD_DATA_BYTES) {
     throw new ParseError(
@@ -60,7 +61,7 @@ export async function decodeSamples(data: EntRecordData, inflate: Inflate): Prom
     }
   }
 
-  const samples: Sample[] = []
+  let car: Sample[] = []
   // continuation flag for the next element sits after the samples, before the secondary list
   let more = r.u8() !== 0
   while (more) {
@@ -117,12 +118,16 @@ export async function decodeSamples(data: EntRecordData, inflate: Inflate): Prom
       r.data()
     }
     if (descs[type] === VEHICLE_CLASS) {
+      const samples: Sample[] = []
       for (let s = 0; s < bufs.length; s++) {
         if (bufs[s]!.length >= MIN_PAYLOAD) {
           samples.push(decodeVehicle(times[s]!, bufs[s]!))
         }
       }
+      if (samples.length > car.length) {
+        car = samples
+      }
     }
   }
-  return samples
+  return car
 }

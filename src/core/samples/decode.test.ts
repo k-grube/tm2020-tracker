@@ -89,7 +89,57 @@ function inlineBody(): number[] {
   ]
 }
 
+// version 10 body with two vehicle elements: a 2-sample object and the 3-sample car
+function twoVehicleInlineBody(): number[] {
+  const payloadAt = (p: [number, number, number]) => {
+    const payload = new Uint8Array(SAMPLE_SIZE)
+    payload.set([...f32(p[0]), ...f32(p[1]), ...f32(p[2])], 47)
+    return Array.from(payload)
+  }
+  const sample = (t: number, p: [number, number, number]) => [
+    1,
+    ...u32(t),
+    ...u32(SAMPLE_SIZE),
+    ...payloadAt(p),
+  ]
+  const element = (samples: number[], more: number) => [
+    ...u32(0),
+    ...u32(0),
+    ...u32(0),
+    ...u32(300),
+    ...u32(0),
+    ...samples,
+    0,
+    more,
+    0,
+  ]
+  return [
+    ...u32(0),
+    ...u32(300),
+    ...u32(1),
+    ...u32(VEHICLE_CLASS),
+    ...u32(0),
+    ...u32(0),
+    ...u32(0),
+    ...u32(0),
+    ...u32(0),
+    ...u32(0),
+    1,
+    ...element([...sample(150, [4, 5, 6]), ...sample(300, [4, 5, 6])], 1),
+    ...element(
+      [...sample(100, [7, 8, 9]), ...sample(200, [7, 8, 9]), ...sample(300, [7, 8, 9])],
+      0,
+    ),
+  ]
+}
+
 describe('decodeSamples', () => {
+  test('several vehicle elements keep only the one with the most samples', async () => {
+    const samples = await decodeSamples(record(twoVehicleInlineBody(), 10), identity)
+    expect(samples.map((s) => s.timeMs)).toEqual([100, 200, 300])
+    expect(samples[0]!.position).toEqual([7, 8, 9])
+  })
+
   test('columnar delta decoding', async () => {
     const samples = await decodeSamples(record(body(VEHICLE_CLASS)), identity)
     expect(samples.map((s) => s.timeMs)).toEqual([0, 100, 200])

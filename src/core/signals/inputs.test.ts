@@ -4,7 +4,7 @@ import { steerDevice } from './steer-device.ts'
 import { inputDensity } from './input-density.ts'
 import { steerSpikes } from './steer-spikes.ts'
 import { steerRepetition } from './steer-repetition.ts'
-import { fakeBaseline, fakeCtx } from './test-util.ts'
+import { fakeBaseline, fakeCtx, steerEvents } from './test-util.ts'
 import type { InputEvent } from '../model.ts'
 
 const ev = (
@@ -29,7 +29,7 @@ describe('same_tick_toggle', () => {
     expect(r.evidence.some((e) => e.includes('gas'))).toBe(true)
   })
 
-  test('three one-tick toggles fire', () => {
+  test('three one-tick toggles stay below the firing count', () => {
     const events = [
       ev(10, 'actionSlot', 1, 1),
       ev(11, 'actionSlot', 1, 0),
@@ -40,6 +40,16 @@ describe('same_tick_toggle', () => {
     ]
     const r = sameTickToggle(fakeCtx({ events }), null)
     expect(r.value).toBe(3)
+    expect(r.fired).toBe(false)
+  })
+
+  test('ten one-tick toggles fire', () => {
+    const events = Array.from({ length: 10 }, (_, i) => [
+      ev(10 + i * 5, 'actionSlot', 1, 1),
+      ev(11 + i * 5, 'actionSlot', 1, 0),
+    ]).flat()
+    const r = sameTickToggle(fakeCtx({ events }), null)
+    expect(r.value).toBe(10)
     expect(r.fired).toBe(true)
   })
 
@@ -165,5 +175,22 @@ describe('steer_spikes_per_sec, long series', () => {
     const r = steerSpikes(fakeCtx({ steer: new Int8Array(20_000_000), device: 'pad' }), null)
     expect(r.applicable).toBe(true)
     expect(r.value).toBe(0)
+  })
+})
+
+describe('degenerate baseline', () => {
+  test('a reference with no spread never fires, the value and range still show', () => {
+    const block = [...Array(40).fill(10), ...Array(40).fill(20), ...Array(40).fill(30)]
+    const pattern = [...block, ...block]
+    const ctx = fakeCtx({
+      device: 'pad',
+      events: steerEvents(pattern),
+      steer: Int8Array.from(pattern),
+    })
+    const flat = fakeBaseline('steer_repetition', 'pad', { median: 0, q1: 0, q3: 0 })
+    const r = steerRepetition(ctx, flat)
+    expect(r.value).toBeGreaterThan(0)
+    expect(r.fired).toBe(false)
+    expect(r.references.at(-1)!.low).toBe(0)
   })
 })

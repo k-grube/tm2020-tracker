@@ -11,6 +11,7 @@ const OPTIONS = {
   events: { type: 'string' },
   out: { type: 'string' },
   map: { type: 'string' },
+  campaign: { type: 'string' },
   ghost: { type: 'string' },
   search: { type: 'string' },
   count: { type: 'string' },

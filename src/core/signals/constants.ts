@@ -12,7 +12,8 @@ export const SPIKE_WINDOW_MS = 1000
 
 // same_tick_toggle: press and release this many ticks apart or less
 export const SAME_TICK_MAX_GAP_TICKS = 1
-export const SAME_TICK_MIN_COUNT = 3
+// 1220 legit top records max out at 4 one-tick toggles per run
+export const SAME_TICK_MIN_COUNT = 10
 
 // steer_repetition: shortest exact repeat worth reporting, and a held constant value is not a repeat
 export const REPEAT_MIN_LEN_TICKS = 50
@@ -25,7 +26,8 @@ export const PAD_MIN_DISTINCT_STEER = 16
 // trajectory_overlap: same position within this distance, for at least this long, ignoring the start block
 export const TRAJECTORY_EPS_M = 0.1
 export const TRAJECTORY_MIN_WINDOW_MS = 2000
-export const TRAJECTORY_SKIP_START_MS = 1000
+// countdown and launch straight overlap for every pair, 29590 legit pairs stop overlapping by 4 s
+export const TRAJECTORY_SKIP_START_MS = 4000
 // longest sample span two files are stepped through, file-declared times past this are not compared
 export const TRAJECTORY_MAX_SPAN_MS = 2 * 60 * 60 * 1000
 
