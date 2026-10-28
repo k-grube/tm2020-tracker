@@ -55,3 +55,7 @@ export function recordUrls(input: string): string[] {
   }
   return []
 }
+
+export function isGbx(bytes: Uint8Array): boolean {
+  return bytes.length >= 3 && bytes[0] === 0x47 && bytes[1] === 0x42 && bytes[2] === 0x58
+}

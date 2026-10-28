@@ -5,7 +5,7 @@ import type { AnalyzeRequest, WorkerResponse } from './worker-protocol.ts'
 import { DropZone } from './components/DropZone.tsx'
 import { FileReportView } from './components/FileReportView.tsx'
 import { GroupsView } from './components/GroupsView.tsx'
-import { proxiedUrl, recordUrls } from './proxy.ts'
+import { isGbx, proxiedUrl, recordUrls } from './proxy.ts'
 
 interface Result {
   report: Report
@@ -90,10 +90,15 @@ export function App() {
           last = `proxy ${res.status}: ${await res.text()}`
           continue
         }
+        const bytes = await res.arrayBuffer()
+        if (!isGbx(new Uint8Array(bytes))) {
+          last = `${url}: not a Gbx file`
+          continue
+        }
         const disposition = res.headers.get('Content-Disposition') ?? ''
         const name =
           /filename="([^"]+)"/.exec(disposition)?.[1] ?? `${url.split('/').pop()}.Ghost.Gbx`
-        await analyze([new File([await res.arrayBuffer()], name)])
+        await analyze([new File([bytes], name)])
         return
       }
       throw new Error(last)

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { proxiedUrl, recordUrls, tmxRecordUrl } from './proxy.ts'
+import { isGbx, proxiedUrl, recordUrls, tmxRecordUrl } from './proxy.ts'
 
 describe('tmxRecordUrl', () => {
   test('builds the online record download url', () => {
@@ -54,5 +54,13 @@ describe('recordUrls', () => {
     ]) {
       expect(recordUrls(bad), bad).toEqual([])
     }
+  })
+})
+
+describe('isGbx', () => {
+  test('checks the GBX magic', () => {
+    expect(isGbx(new Uint8Array([0x47, 0x42, 0x58, 6, 0]))).toBe(true)
+    expect(isGbx(new TextEncoder().encode('<!DOCTYPE html>'))).toBe(false)
+    expect(isGbx(new Uint8Array(0))).toBe(false)
   })
 })
