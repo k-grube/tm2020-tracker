@@ -4,7 +4,7 @@ import type { FileViz } from './viz.ts'
 import type { AnalyzeRequest, WorkerResponse } from './worker-protocol.ts'
 import { DropZone } from './components/DropZone.tsx'
 import { FileReportView } from './components/FileReportView.tsx'
-import { FileTabs } from './components/FileTabs.tsx'
+import { FileTabs, type TabSort } from './components/FileTabs.tsx'
 import { GroupsView } from './components/GroupsView.tsx'
 import { CampaignBrowser } from './components/CampaignBrowser.tsx'
 import { MapRecords } from './components/MapRecords.tsx'
@@ -54,6 +54,7 @@ export function App() {
   const [files, setFiles] = useState<StoredFile[]>([])
   const [result, setResult] = useState<Result | null>(null)
   const [selected, setSelected] = useState(0)
+  const [sort, setSort] = useState<TabSort>('name')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [uuid, setUuid] = useState('')
@@ -189,7 +190,13 @@ export function App() {
     name: r.name,
     nickname: r.nickname,
     raceTimeMs: r.raceTimeMs,
-    needsHumanReview: r.summary.needsHumanReview,
+    status: r.summary.needsHumanReview
+      ? ('review' as const)
+      : r.login === '' && r.raceTimeMs === null
+        ? ('error' as const)
+        : r.signals.some((s) => s.fired)
+          ? ('warn' as const)
+          : ('ok' as const),
   }))
 
   return (
@@ -277,6 +284,8 @@ export function App() {
       <FileTabs
         entries={tabs}
         selected={selected}
+        sort={sort}
+        onSort={setSort}
         onSelect={setSelected}
         onRemove={remove}
         onClear={() => {

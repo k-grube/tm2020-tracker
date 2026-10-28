@@ -190,20 +190,25 @@ describe('FileTabs', () => {
     const html = renderToStaticMarkup(
       createElement(FileTabs, {
         entries: [
-          { name: 'a.Ghost.Gbx', nickname: 'Slidrz', raceTimeMs: 24794, needsHumanReview: false },
-          { name: 'b.Ghost.Gbx', nickname: 'hobbi.', raceTimeMs: 59323, needsHumanReview: true },
+          { name: 'a.Ghost.Gbx', nickname: 'Slidrz', raceTimeMs: 24794, status: 'ok' as const },
+          { name: 'b.Ghost.Gbx', nickname: 'hobbi.', raceTimeMs: 59323, status: 'review' as const },
+          { name: 'c.Ghost.Gbx', nickname: 'geppty', raceTimeMs: 49292, status: 'warn' as const },
         ],
         selected: 1,
+        sort: 'name' as const,
+        onSort: () => {},
         onSelect: () => {},
         onRemove: () => {},
         onClear: () => {},
       }),
     )
-    expect((html.match(/role="tab"/g) ?? []).length).toBe(2)
+    expect((html.match(/role="tab"/g) ?? []).length).toBe(3)
     expect(html).toContain('Slidrz 24.794')
     expect(html).toContain('hobbi. 59.323')
     expect((html.match(/aria-selected="true"/g) ?? []).length).toBe(1)
     expect((html.match(/class="[^"]*bg-red-600[^"]*"/g) ?? []).length).toBe(1)
+    expect((html.match(/class="[^"]*bg-green-600[^"]*"/g) ?? []).length).toBe(1)
+    expect((html.match(/class="[^"]*bg-amber-500[^"]*"/g) ?? []).length).toBe(1)
     expect(html).toContain('clear all')
   })
 })
@@ -214,11 +219,13 @@ describe('FileTabs order', () => {
     const html = renderToStaticMarkup(
       createElement(FileTabs, {
         entries: [
-          { name: 'z.Ghost.Gbx', nickname: 'Zed', raceTimeMs: 1000, needsHumanReview: false },
-          { name: 'a.Ghost.Gbx', nickname: 'alpha', raceTimeMs: 1000, needsHumanReview: false },
-          { name: 'm.Ghost.Gbx', nickname: 'Mid', raceTimeMs: 1000, needsHumanReview: false },
+          { name: 'z.Ghost.Gbx', nickname: 'Zed', raceTimeMs: 1000, status: 'ok' as const },
+          { name: 'a.Ghost.Gbx', nickname: 'alpha', raceTimeMs: 1000, status: 'ok' as const },
+          { name: 'm.Ghost.Gbx', nickname: 'Mid', raceTimeMs: 1000, status: 'ok' as const },
         ],
         selected: 0,
+        sort: 'name' as const,
+        onSort: () => {},
         onSelect: () => {},
         onRemove: () => {},
         onClear: () => {},
@@ -250,5 +257,50 @@ describe('MapRecords', () => {
     )
     expect(empty).toContain('analyze top 25')
     expect(empty).toMatch(/<button[^>]*disabled/)
+  })
+})
+
+describe('FileTabs sort', () => {
+  const entries = [
+    { name: 'z.Ghost.Gbx', nickname: 'Zed', raceTimeMs: 1500, status: 'ok' as const },
+    { name: 'a.Ghost.Gbx', nickname: 'alpha', raceTimeMs: 3000, status: 'ok' as const },
+    { name: 'm.Ghost.Gbx', nickname: 'Mid', raceTimeMs: 1000, status: 'ok' as const },
+    { name: 'broken.Gbx', nickname: '', raceTimeMs: null, status: 'error' as const },
+  ]
+  const labels = (html: string) => [...html.matchAll(/role="tab"[^>]*>([^<]+)</g)].map((m) => m[1])
+
+  test('time puts the fastest first and files without a time last', async () => {
+    const { FileTabs } = await import('./components/FileTabs.tsx')
+    const html = renderToStaticMarkup(
+      createElement(FileTabs, {
+        entries,
+        selected: 0,
+        sort: 'time',
+        onSort: () => {},
+        onSelect: () => {},
+        onRemove: () => {},
+        onClear: () => {},
+      }),
+    )
+    expect(labels(html)).toEqual(['Mid 1.000', 'Zed 1.500', 'alpha 3.000', 'broken.Gbx'])
+    expect(html).toMatch(/aria-pressed="true"[^>]*>time</)
+  })
+
+  test('sort buttons only show with two or more files', async () => {
+    const { FileTabs } = await import('./components/FileTabs.tsx')
+    const props = {
+      selected: 0,
+      sort: 'name' as const,
+      onSort: () => {},
+      onSelect: () => {},
+      onRemove: () => {},
+      onClear: () => {},
+    }
+    expect(
+      renderToStaticMarkup(createElement(FileTabs, { ...props, entries: entries.slice(0, 1) })),
+    ).not.toContain('aria-pressed')
+    expect(renderToStaticMarkup(createElement(FileTabs, { ...props, entries }))).toContain(
+      'aria-pressed',
+    )
   })
 })
