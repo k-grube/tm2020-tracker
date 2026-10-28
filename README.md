@@ -1,20 +1,27 @@
 # tm2020-tracker
 
-Screens Trackmania 2020 ghost and replay files for input and timing patterns that a hand on a controller does not produce. Own Gbx parser, no runtime dependencies in the core, one codebase for the CLI and the web page.
-
-Every signal is a measurement next to its reference range. The summary line is `needs human review: yes/no`.
+Screens Trackmania 2020 ghost and replay files for input and timing patterns. Own Gbx parser, no runtime dependencies in the core, one codebase for the CLI and the web page.
 
 Page: https://k-grube.github.io/tm2020-tracker/
 
 ## Web page
 
-Drop `.Ghost.Gbx` or `.Replay.Gbx` files on the page. Parsing and analysis run in a Web Worker, nothing leaves the browser. Files that share a map or a login get the cross-file signals.
+Three ways to load files:
 
-The text field takes a record uuid, a TMX replay id, or a download url from `trackmania.exchange/getonlinerecord/<uuid>`, `trackmania.exchange/recordgbx/<id>` or `trackmania.io/api/download/ghost/<uuid>`. The url is rebuilt from the id. With `VITE_PROXY_URL` set at build time the page fetches the file through the proxy below, otherwise it links to the download.
+- **files**: drop `.Ghost.Gbx` or `.Replay.Gbx`, or paste a record uuid, a TMX replay id, or a download url from `trackmania.exchange/getonlinerecord/<uuid>`, `trackmania.exchange/recordgbx/<id>` or `trackmania.io/api/download/ghost/<uuid>`. The url is rebuilt from the id
+- **campaign leaderboards**: pick an official campaign and a map, filter the top 25 by player, analyze one
+- **map records**: paste a TMX map link or id, analyze the top 25 as one batch
 
-### Download proxy
+Loaded files sit in a tab strip, sorted by name or time, kept in IndexedDB across reloads. Dot per file: green nothing fired, amber a check fired, red needs review, gray did not parse. The whole set is analyzed together, so the cross-file checks cover every loaded file. `x` removes one, `clear all` empties the store. A glossary of the checks sits under the report.
 
-`worker/proxy.js` is a Cloudflare Worker. `GET /?url=<download url>`, hosts and paths limited to the three above, origins limited to `ALLOWED_ORIGINS`, CORS headers added to the response.
+Parsing and analysis run in a Web Worker. TMX and trackmania.io are reached only through the proxy below. Without `VITE_PROXY_URL` the files tab shows a download link instead of fetching.
+
+### Proxy
+
+`worker/proxy.js` is a Cloudflare Worker. `GET /?url=<url>`, limited to these hosts and paths, origins limited to `ALLOWED_ORIGINS`, CORS headers added to the response:
+
+- `trackmania.exchange`: `/getonlinerecord/<uuid>`, `/recordgbx/<id>`, `/api/maps/getonlinerecords?mapId=&count=`
+- `trackmania.io`: `/api/download/ghost/<uuid>`, `/api/campaigns/seasonal/<page>`, `/api/campaign/seasonal/<id>`, `/api/leaderboard/map/<uid>?offset=&length=`
 
 1. dash.cloudflare.com, Workers & Pages, Create application, Start with Hello World, Deploy
 2. Edit code, paste `worker/proxy.js`, Deploy
@@ -57,7 +64,7 @@ node src/cli/main.ts analyze fixtures/wr --baseline public/baseline.json
 | `ticks_vs_racetime`      | absolute            | decoded input ticks x 10 ms + start offset vs race time, tolerance 2 ticks. Fires when the inputs end before the finish                         |
 | `same_tick_toggle`       | absolute            | inputs pressed and released within one 10 ms tick. Fires at 10                                                                                  |
 | `steer_spikes_per_sec`   | relative            | steer direction changes per 1 s window, deltas below 4 of 127 ignored. Average, max window, and the 2021 references                             |
-| `input_density`          | relative            | input events per race second, steer and other inputs                                                                                            |
+| `input_density`          | relative            | steer and button inputs per race second. Mouse movement is counted on its own line and excluded                                                 |
 | `steer_device`           | info                | keyboard (only -127, 0, 127), pad (analog range), mixed. References are split by this                                                           |
 | `steer_repetition`       | relative            | pad only. Longest exact repeat of a steer sequence, 50 ticks or more, at least 3 distinct values                                                |
 | `trajectory_overlap`     | relative, two files | same map, longest window where recorded positions stay within 0.1 m, first 4 s skipped. Two saves of one recording (same ghost uid) are skipped |
@@ -68,7 +75,7 @@ node src/cli/main.ts analyze fixtures/wr --baseline public/baseline.json
 
 `public/baseline.json` holds the reference ranges: 1004 TMX online records, ranks 10 to 50, the 25 Summer 2020 campaign maps plus 7 popular maps, built with `baseline`.
 
-Signals that fire also carry the ticks they point at, shown as red bars on the steer trace.
+Signals that fire carry the ticks they point at, drawn as red bars on the steer trace.
 
 ## Caveats
 
