@@ -45,7 +45,7 @@ node src/cli/main.ts baseline <dir> --out <file> [--ranks lo:hi]
 - `dump`: chunk tree, decoded fields, hex of unknown chunks, first N input events
 - `fetch --map`: TMX online records of a map as `.Ghost.Gbx`, `--uploads` for user-uploaded replays, `--search` for map ids. `index.json` next to the files holds position, map, record time and record or replay id
 - `fetch --campaign`: top N Nadeo records of every map in an official campaign through trackmania.io, the id is the number in `trackmania.io/#/campaigns/seasonal/<id>`
-- `analyze`: report per file plus cross-file signals, `--json` is the same report the page builds
+- `analyze`: report per file plus cross-file signals, `--json` is the same report the page builds, `--summary` counts fired per signal and lists the files
 - `baseline`: median, quartiles and sample count per signal and steer device over a directory of fetched records, ranks 10 to 50 by default
 
 Current world records of a campaign:
@@ -57,21 +57,28 @@ node src/cli/main.ts analyze fixtures/wr --baseline public/baseline.json
 
 ## Signals
 
-| id                       | level               | measures                                                                                                                                        |
-| ------------------------ | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `wall_time_delta`        | relative            | wall-clock duration of the recording (chunk `0x0309202C`, 1 s resolution) minus race time, in seconds. Fires above the reference only           |
-| `wall_time_ratio`        | info                | the same as a ratio, aggregated per login across files                                                                                          |
-| `ticks_vs_racetime`      | absolute            | decoded input ticks x 10 ms + start offset vs race time, tolerance 2 ticks. Fires when the inputs end before the finish                         |
-| `same_tick_toggle`       | absolute            | inputs pressed and released within one 10 ms tick. Fires at 10                                                                                  |
-| `steer_spikes_per_sec`   | relative            | steer direction changes per 1 s window, deltas below 4 of 127 ignored. Average, max window, and the 2021 references                             |
-| `input_density`          | relative            | steer and button inputs per race second. Mouse movement is counted on its own line and excluded                                                 |
-| `steer_device`           | info                | keyboard (only -127, 0, 127), pad (analog range), mixed. References are split by this                                                           |
-| `steer_repetition`       | relative            | pad only. Longest exact repeat of a steer sequence, 50 ticks or more, at least 3 distinct values                                                |
-| `trajectory_overlap`     | relative, two files | same map, longest window where recorded positions stay within 0.1 m, first 4 s skipped. Two saves of one recording (same ghost uid) are skipped |
-| `checkpoint_split_match` | info, two files     | identical checkpoint times to the ms across files from one login                                                                                |
-| `metadata`               | info                | login, nickname, zone, club tag, map, model, exe build, race settings, validation seed, decode warnings                                         |
+| id                       | level                | measures                                                                                                                                                                                                                                                   |
+| ------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `decode_failure`         | absolute             | the input stream or the position samples did not decode                                                                                                                                                                                                    |
+| `wall_time_delta`        | relative             | wall-clock duration of the recording (chunk `0x0309202C`, 1 s resolution) minus race time, in seconds. Fires above the reference only, silent when the end stamp is unset                                                                                  |
+| `wall_time_ratio`        | info                 | the same as a ratio, aggregated per login across files                                                                                                                                                                                                     |
+| `ticks_vs_racetime`      | absolute             | decoded input ticks x 10 ms + start offset vs race time, tolerance 2 ticks. Fires when the inputs end before the finish                                                                                                                                    |
+| `validation_consistency` | empirical            | chunk `0x025` against `0x02D` (build, checksum, os, cpu, settings, seed), the `0x02C` window against `0x02D`, end stamp set and after start, wall time at least the race time, start after the build date, seed 0 on a build after 2021 (ghost files only) |
+| `checkpoint_consistency` | absolute             | split times in `0x00B`, `0x01B` deltas and `0x02B` agree, strictly increase, and end on the race time                                                                                                                                                      |
+| `sample_input_match`     | empirical            | steer, gas and brake stored in every 50 ms vehicle sample against the input stream at that tick or the one before, an action key cap (20 to 80%) counts as a match. Fires above 10% mismatch, steer rule for pad only                                      |
+| `position_continuity`    | empirical            | distance between consecutive samples over recorded speed x gap + 5 cm. A jump beyond 1.5x is a teleport, fires when teleports exceed the declared respawn count. Last 200 ms and the second after a teleport skipped                                       |
+| `input_structure`        | empirical            | one input entry, one contiguous vehicle state block with only kinds 14 and 15 around it, vehicle state within 38 ticks, steer never below -127                                                                                                             |
+| `same_tick_toggle`       | empirical            | inputs pressed and released within one 10 ms tick. Fires at 10                                                                                                                                                                                             |
+| `steer_spikes_per_sec`   | relative             | steer direction changes per 1 s window inside the race (first vehicle tick to finish), deltas below 4 of 127 ignored. Average, max window, and the 2021 references                                                                                         |
+| `input_density`          | relative             | steer and button inputs per race second inside the race. Mouse movement is counted on its own line and excluded                                                                                                                                            |
+| `steer_device`           | info                 | keyboard (only -127, 0, 127), pad (analog range), mixed. References are split by this                                                                                                                                                                      |
+| `steer_repetition`       | empirical            | pad only. Exact repeat of a steer sequence, 50 ticks or more with at least 8 distinct values in the window                                                                                                                                                 |
+| `trajectory_overlap`     | empirical, two files | same map, longest window where positions stay within 0.1 m at any time shift up to 2 s, first 4 s skipped, fires at 6 s. Two saves of one recording (same ghost uid or recording id, one login) are skipped                                                |
+| `split_copy`             | empirical, two files | different logins: the same ghost uid or recording id under both, or four or more checkpoint times identical to the ms at the same index                                                                                                                    |
+| `checkpoint_split_match` | info, two files      | identical checkpoint times to the ms across files from one login                                                                                                                                                                                           |
+| `metadata`               | info                 | login, nickname, zone, club tag, map, model, samples, ghosts in a replay, exe build, race settings, validation seed, recording id, decode warnings                                                                                                         |
 
-`absolute`: the game does not produce it. `relative`: outside the Tukey fence (1.5 IQR) of the loaded reference for the file's device, silent without a reference. `info`: never fires. `needs human review` is yes when an absolute signal fired or two or more relative signals fired.
+`absolute`: one file contradicts itself. `empirical`: a fixed rule, not seen in 1247 legit records (the baseline corpus, the Fall 2026 world records, two local replays). `relative`: outside the Tukey fence (1.5 IQR) of the loaded reference for the file's device, silent without a reference. `info`: never fires. `needs human review` is yes when an absolute or empirical signal fired, or two or more relative signals fired.
 
 `public/baseline.json` holds the reference ranges: 1004 TMX online records, ranks 10 to 50, the 25 Summer 2020 campaign maps plus 7 popular maps, built with `baseline`.
 
@@ -79,7 +86,8 @@ Signals that fire carry the ticks they point at, drawn as red bars on the steer 
 
 ## Caveats
 
-- no file from a confirmed case has been run through this
+- one removed record has been through this: Fall 2026 map 01, 19.869 by DeleteCheatWRs, live for twenty minutes on 2026-10-28. `position_continuity` counts 13 teleports of 2 to 10 m with no respawn declared, `wall_time_delta` is +194 s, every other check is quiet. The file is `fixtures/DeleteCheatWRs_(0019869)_fall-2026-01.Ghost.Gbx`
+- a run driven by injected inputs, or in slow motion with the timestamps patched, is self-consistent. Nothing in the file separates it from a human run
 - the 2021 references come from TMNF/TMUF replays
 - wall time has 1 s resolution
 - action slots 2 and 4 have an extra bit the decoder ignores

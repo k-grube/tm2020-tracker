@@ -27,6 +27,10 @@ function bitOf(v: bigint, bit: number): number {
 export interface DecodedInputs {
   events: InputEvent[]
   decodedTicks: number
+  // full-state kinds in order of appearance, repeats collapsed
+  kinds: number[]
+  firstVehicleTick: number | null
+  minSteer: number | null
 }
 
 export function decodeInputs(d: PlayerInputData): InputEvent[] {
@@ -47,6 +51,9 @@ export function decodeInputStream(d: PlayerInputData): DecodedInputs {
   let prevBrake = 0
   let mouseX = 0
   let mouseY = 0
+  const kinds: number[] = []
+  let firstVehicleTick: number | null = null
+  let minSteer: number | null = null
 
   const emit = (tick: number, kind: InputKind, value: number, value2?: number): void => {
     const ev: InputEvent = { tick, timeMs: tick * TICK_MS + offset, kind, value }
@@ -76,6 +83,12 @@ export function decodeInputStream(d: PlayerInputData): DecodedInputs {
           }
           // gbx.net: 2..4 vehicle, 0 not started, anything else character (15 shows up at the finish)
           state = kind === 0 ? 'notStarted' : kind >= 2 && kind <= 4 ? 'vehicle' : 'character'
+          if (kinds.at(-1) !== kind) {
+            kinds.push(kind)
+          }
+          if (state === 'vehicle' && firstVehicleTick === null) {
+            firstVehicleTick = tick
+          }
           for (const f of FULL_STATE_BITS) {
             const now = bitOf(s, f.bit)
             const before = bitOf(prevFull, f.bit)
@@ -109,6 +122,9 @@ export function decodeInputStream(d: PlayerInputData): DecodedInputs {
           const steer = b.readI8()
           const gas = b.bit()
           const brake = b.bit()
+          if (minSteer === null || steer < minSteer) {
+            minSteer = steer
+          }
           if (steer !== prevSteer) {
             prevSteer = steer
             emit(tick, 'steer', steer)
@@ -142,7 +158,23 @@ export function decodeInputStream(d: PlayerInputData): DecodedInputs {
       throw new ParseError('trailing input data', i)
     }
   }
-  return { events, decodedTicks }
+  return { events, decodedTicks, kinds, firstVehicleTick, minSteer }
+}
+
+// per-tick value of a binary input, forward-filled, 0 before its first event
+export function binarySeries(events: InputEvent[], kind: InputKind, ticks: number): Uint8Array {
+  const out = new Uint8Array(ticks)
+  let value = 0
+  let next = 0
+  const own = events.filter((e) => e.kind === kind)
+  for (let t = 0; t < ticks; t++) {
+    while (next < own.length && own[next]!.tick <= t) {
+      value = own[next]!.value
+      next++
+    }
+    out[t] = value
+  }
+  return out
 }
 
 // per-tick steer, forward-filled, 0 before the first steer event

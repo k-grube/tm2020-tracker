@@ -1,12 +1,7 @@
 import type { Baseline, BaselineStat, Device, FileReport, SignalId } from './signals/types.ts'
 
 // relative signals get a reference range, everything else has none
-const RELATIVE_IDS: SignalId[] = [
-  'wall_time_delta',
-  'steer_spikes_per_sec',
-  'input_density',
-  'steer_repetition',
-]
+const RELATIVE_IDS: SignalId[] = ['wall_time_delta', 'steer_spikes_per_sec', 'input_density']
 const MIN_FILES_PER_DEVICE = 5
 
 // linear interpolation between order statistics, sorted ascending input

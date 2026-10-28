@@ -1,6 +1,6 @@
 import { decodeInputStream, steerSeries } from '../inputs/decode.ts'
 import { decodeSamples } from '../samples/decode.ts'
-import type { Inflate, InputEvent, ParsedFile, Sample } from '../model.ts'
+import type { Ghost, Inflate, InputEvent, ParsedFile, Sample } from '../model.ts'
 import { KEYBOARD_STEER_VALUES, PAD_MIN_DISTINCT_STEER } from './constants.ts'
 import type { Device, FileContext } from './types.ts'
 
@@ -20,13 +20,25 @@ export function detectDevice(steer: Int8Array | null): Device {
 
 const message = (e: unknown): string => (e instanceof Error ? e.message : String(e))
 
+// a replay can hold several ghosts, the one with the header login is the author's
+export function pickGhost(parsed: ParsedFile): Ghost | null {
+  const login = parsed.replay?.login
+  if (login) {
+    const own = parsed.ghosts.find((g) => g.login === login)
+    if (own) {
+      return own
+    }
+  }
+  return parsed.ghosts[0] ?? null
+}
+
 // each decode stage fails on its own, the ghost fields and the other stages still reach the report
 export async function buildContext(
   name: string,
   parsed: ParsedFile,
   inflate: Inflate,
 ): Promise<FileContext> {
-  const ghost = parsed.ghosts[0]
+  const ghost = pickGhost(parsed)
   if (!ghost) {
     throw new Error(`${name}: no ghost in file`)
   }
@@ -34,23 +46,47 @@ export async function buildContext(
   let events: InputEvent[] = []
   let steer: Int8Array | null = null
   let decodedTicks: number | null = null
+  let inputError: string | null = null
+  let samplesError: string | null = null
+  let firstVehicleTick: number | null = null
+  let kinds: number[] = []
+  let minSteer: number | null = null
   if (input) {
     try {
       const decoded = decodeInputStream(input)
       events = decoded.events
       decodedTicks = decoded.decodedTicks
+      firstVehicleTick = decoded.firstVehicleTick
+      kinds = decoded.kinds
+      minSteer = decoded.minSteer
       steer = steerSeries(events, input.ticks)
     } catch (e) {
-      parsed.warnings.push(`inputs not decoded: ${message(e)}`)
+      inputError = `inputs not decoded: ${message(e)}`
+      parsed.warnings.push(inputError)
     }
   }
   let samples: Sample[] | null = null
   if (ghost.recordData) {
     try {
-      samples = await decodeSamples(ghost.recordData, inflate)
+      samples = await decodeSamples(ghost.recordData, inflate, ghost.raceTimeMs)
     } catch (e) {
-      parsed.warnings.push(`record data not decoded: ${message(e)}`)
+      samplesError = `record data not decoded: ${message(e)}`
+      parsed.warnings.push(samplesError)
     }
   }
-  return { name, parsed, ghost, events, steer, samples, decodedTicks, device: detectDevice(steer) }
+  return {
+    name,
+    parsed,
+    ghost,
+    events,
+    steer,
+    samples,
+    decodedTicks,
+    inputError,
+    samplesError,
+    firstVehicleTick,
+    kinds,
+    minSteer,
+    device: detectDevice(steer),
+  }
 }

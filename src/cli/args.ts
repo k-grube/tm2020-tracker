@@ -8,6 +8,7 @@ export interface CliArgs {
 
 const OPTIONS = {
   json: { type: 'boolean' },
+  summary: { type: 'boolean' },
   events: { type: 'string' },
   out: { type: 'string' },
   map: { type: 'string' },

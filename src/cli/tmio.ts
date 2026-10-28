@@ -43,10 +43,16 @@ interface LeaderboardJson {
   }[]
 }
 
-const RETRY_WAITS_MS = [2000, 4000, 8000]
+// 625 ghosts in one campaign pull, the site answers bursts with 429 for a minute or more
+const RETRY_WAITS_MS = [5000, 15000, 30000, 60000, 60000]
 
 const defaultSleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms))
+
+export function ghostFilename(player: string, timeMs: number, mapName: string): string {
+  const time = String(timeMs).padStart(7, '0')
+  return `${sanitizeFilename(player)}_(${time})_${kebab(mapName)}.Ghost.Gbx`
+}
 
 // nadeo leaderboards through trackmania.io, ghost files come back as .Ghost.Gbx
 // a 429 is retried with growing waits, the site rate limits bursts of ghost downloads
@@ -65,7 +71,8 @@ export function createTmioClient(
         return res
       }
       if (res.status === 429 && attempt < RETRY_WAITS_MS.length) {
-        await sleep(RETRY_WAITS_MS[attempt]!)
+        const retryAfter = Number(res.headers.get('Retry-After'))
+        await sleep(retryAfter > 0 ? retryAfter * 1000 : RETRY_WAITS_MS[attempt]!)
         continue
       }
       throw new Error(`trackmania.io ${res.status} for ${url}`)
@@ -95,9 +102,8 @@ export function createTmioClient(
 
     async downloadGhost(url, player, timeMs, mapName) {
       const res = await get(url)
-      const time = String(timeMs).padStart(7, '0')
       return {
-        filename: `${sanitizeFilename(player)}_(${time})_${kebab(mapName)}.Ghost.Gbx`,
+        filename: ghostFilename(player, timeMs, mapName),
         bytes: new Uint8Array(await res.arrayBuffer()),
       }
     },

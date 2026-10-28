@@ -5,3 +5,4 @@ fixtures/*/
 .env*.local
 .superpowers/
 .idea/
+docs/superpowers/

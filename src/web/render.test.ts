@@ -83,7 +83,12 @@ describe('FileReportView', () => {
       raceTimeMs: 1000,
       device: 'pad' as const,
       signals: [],
-      summary: { absoluteFired: [], relativeOutside: [], needsHumanReview: false },
+      summary: {
+        absoluteFired: [],
+        empiricalFired: [],
+        relativeOutside: [],
+        needsHumanReview: false,
+      },
     }))
     const groups = {
       byMap: [

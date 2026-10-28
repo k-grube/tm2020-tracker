@@ -4,6 +4,8 @@ import { decodeSamples } from './decode.ts'
 import { ParseError } from '../io/errors.ts'
 import type { EntRecordData, Inflate } from '../model.ts'
 import { parseGhostFixture } from '../../test/ghost.ts'
+import { loadCorpusFixture } from '../../test/fixtures.ts'
+import { parseGbx } from '../parse.ts'
 
 const identity: Inflate = (c) => c
 const nodeInflate: Inflate = (c) => new Uint8Array(inflateSync(c))
@@ -134,6 +136,13 @@ function twoVehicleInlineBody(): number[] {
 }
 
 describe('decodeSamples', () => {
+  test('jdon picks the 50 ms car, not the 2565 sample element', async () => {
+    const g = parseGbx(loadCorpusFixture('jdon')).ghosts[0]!
+    const samples = await decodeSamples(g.recordData!, nodeInflate, g.raceTimeMs)
+    expect(samples.length).toBe(1077)
+    expect(samples[1]!.timeMs - samples[0]!.timeMs).toBe(50)
+  })
+
   test('several vehicle elements keep only the one with the most samples', async () => {
     const samples = await decodeSamples(record(twoVehicleInlineBody(), 10), identity)
     expect(samples.map((s) => s.timeMs)).toEqual([100, 200, 300])

@@ -2,9 +2,10 @@ import { describe, expect, test } from 'vitest'
 import { inflateSync } from 'node:zlib'
 import { buildContext, detectDevice } from './context.ts'
 import { summarize } from './index.ts'
+import { metadata } from './metadata.ts'
 import { parseGbx } from '../parse.ts'
 import type { Inflate } from '../model.ts'
-import type { SignalResult } from './types.ts'
+import type { FileContext, SignalResult } from './types.ts'
 import { loadFixture } from '../../test/fixtures.ts'
 
 const nodeInflate: Inflate = (c) => new Uint8Array(inflateSync(c))
@@ -72,10 +73,77 @@ describe('summarize', () => {
     expect(two.needsHumanReview).toBe(true)
   })
 
+  test('one empirical signal is enough for review', () => {
+    const s = summarize([result({ id: 'same_tick_toggle', level: 'empirical', fired: true })])
+    expect(s.empiricalFired).toEqual(['same_tick_toggle'])
+    expect(s.absoluteFired).toEqual([])
+    expect(s.needsHumanReview).toBe(true)
+  })
+
   test('nothing fired is clean', () => {
     const s = summarize([result({ id: 'wall_time_ratio', level: 'relative', fired: false })])
-    expect(s).toEqual({ absoluteFired: [], relativeOutside: [], needsHumanReview: false })
+    expect(s).toEqual({
+      absoluteFired: [],
+      empiricalFired: [],
+      relativeOutside: [],
+      needsHumanReview: false,
+    })
   })
+})
+
+// share of samples inside the race whose steer and gas bytes equal the input at that tick or the one before
+function matchShare(ctx: FileContext): { steer: number; gas: number } {
+  const offset = ctx.ghost.inputs[0]!.startOffsetMs ?? 0
+  const raceTicks = Math.floor((ctx.ghost.raceTimeMs! - offset) / 10)
+  const ticks = ctx.steer!.length
+  const gas = new Uint8Array(ticks)
+  const brake = new Uint8Array(ticks)
+  let g = 0
+  let b = 0
+  let next = 0
+  const events = ctx.events.filter((e) => e.kind === 'gas' || e.kind === 'brake')
+  for (let t = 0; t < ticks; t++) {
+    while (next < events.length && events[next]!.tick <= t) {
+      if (events[next]!.kind === 'gas') {
+        g = events[next]!.value
+      } else {
+        b = events[next]!.value
+      }
+      next++
+    }
+    gas[t] = g
+    brake[t] = b
+  }
+  const eff = (t: number) => (gas[t] && !brake[t] ? true : false)
+  let n = 0
+  let steerOk = 0
+  let gasOk = 0
+  for (const s of ctx.samples!) {
+    const tick = Math.round((s.timeMs - offset) / 10)
+    if (tick < 2 || tick >= ticks || tick > raceTicks) {
+      continue
+    }
+    n++
+    if (s.steer === ctx.steer![tick] || s.steer === ctx.steer![tick - 1]) {
+      steerOk++
+    }
+    if (s.gas === eff(tick) || s.gas === eff(tick - 1)) {
+      gasOk++
+    }
+  }
+  return { steer: steerOk / n, gas: gasOk / n }
+}
+
+describe('sample input bytes', () => {
+  test.each(['slidrz', 'tmio'] as const)(
+    'steer and gas follow the input stream on %s',
+    async (name) => {
+      const ctx = await buildContext(name, parseGbx(loadFixture(name)), nodeInflate)
+      const share = matchShare(ctx)
+      expect(share.steer).toBeGreaterThanOrEqual(0.99)
+      expect(share.gas).toBeGreaterThanOrEqual(0.99)
+    },
+  )
 })
 
 describe('buildContext, partial decode failures', () => {
@@ -86,6 +154,8 @@ describe('buildContext, partial decode failures', () => {
     expect(ctx.samples).toBeNull()
     expect(ctx.events.length).toBeGreaterThan(100)
     expect(parsed.warnings.join(' ')).toMatch(/record data/)
+    expect(ctx.samplesError).toMatch(/./)
+    expect(ctx.inputError).toBeNull()
   })
 
   test('unsupported input encoding leaves events empty and adds a warning', async () => {
@@ -99,5 +169,34 @@ describe('buildContext, partial decode failures', () => {
     expect(ctx.decodedTicks).toBeNull()
     expect(ctx.samples!.length).toBeGreaterThan(200)
     expect(parsed.warnings.join(' ')).toMatch(/float steer/)
+    expect(ctx.inputError).toMatch(/float steer/)
+    expect(ctx.samplesError).toBeNull()
+  })
+})
+
+describe('ghost pick in replays', () => {
+  test('replay with two ghosts analyzes the author ghost', async () => {
+    const base = parseGbx(loadFixture('localPbReplay'))
+    const author = base.ghosts[0]!
+    const decoy = { ...author, login: 'someone-else', raceTimeMs: 1000 }
+    const ctx = await buildContext('x', { ...base, ghosts: [decoy, author] }, nodeInflate)
+    expect(base.replay!.login).toBe(author.login)
+    expect(ctx.ghost.login).toBe(author.login)
+    expect(ctx.ghost.raceTimeMs).toBe(author.raceTimeMs)
+    const lines = metadata(ctx, null).evidence
+    expect(lines).toContainEqual(expect.stringMatching(/^ghosts 2, analyzed #2/))
+    expect(lines).toContainEqual(expect.stringMatching(/^ghost #1 someone-else 1000 ms/))
+  })
+
+  test('replay header without login takes the first ghost', async () => {
+    const base = parseGbx(loadFixture('localPbReplay'))
+    const decoy = { ...base.ghosts[0]!, login: 'someone-else' }
+    const parsed = {
+      ...base,
+      replay: { ...base.replay!, login: null },
+      ghosts: [decoy, base.ghosts[0]!],
+    }
+    const ctx = await buildContext('x', parsed, nodeInflate)
+    expect(ctx.ghost.login).toBe('someone-else')
   })
 })

@@ -6,7 +6,7 @@ const DOT = { fired: 'bg-red-600', ok: 'bg-green-600', 'n/a': 'bg-zinc-400' } as
 
 export function SignalCard({ signal }: { signal: SignalResult }) {
   const st = status(signal)
-  const stText = st === 'fired' && signal.level === 'absolute' ? 'fired' : STATUS_TEXT[st]
+  const stText = st === 'fired' && signal.level !== 'relative' ? 'fired' : STATUS_TEXT[st]
   const border =
     st === 'fired' ? 'border-red-400 dark:border-red-500' : 'border-zinc-200 dark:border-zinc-800'
   return (

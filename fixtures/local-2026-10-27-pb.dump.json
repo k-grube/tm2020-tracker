@@ -50,6 +50,36 @@
           "stuntsScore": 0
         }
       ],
+      "checkpoints01b": {
+        "totalMs": 21278,
+        "deltasMs": [
+          5492,
+          6770,
+          3783,
+          5233
+        ]
+      },
+      "checkpoints02b": {
+        "totalMs": 21278,
+        "entries": [
+          {
+            "timeMs": 5492,
+            "landmark": 0
+          },
+          {
+            "timeMs": 12262,
+            "landmark": 3
+          },
+          {
+            "timeMs": 16045,
+            "landmark": 1
+          },
+          {
+            "timeMs": 21278,
+            "landmark": 4
+          }
+        ]
+      },
       "ghostVersion": 8,
       "wallTime": {
         "startUnixSec": 1793141627,
@@ -57,6 +87,9 @@
         "source": "02C"
       },
       "validation": {
+        "source": "02D",
+        "startUnixSec": 1793141627,
+        "endUnixSec": 1793141648,
         "exeVersion": "Trackmania date=2026-02-02_17_51 git=128149-c7d05ad2551 GameVersion=3.3.0",
         "exeChecksum": 1623925506,
         "osKind": 14,
@@ -65,6 +98,19 @@
         "validationSeed": 29453664,
         "raceSettings": "Openplanet 1.29.14 (next, Public, 6fd4200f)"
       },
+      "validation025": {
+        "source": "025",
+        "startUnixSec": null,
+        "endUnixSec": null,
+        "exeVersion": "Trackmania date=2026-02-02_17_51 git=128149-c7d05ad2551 GameVersion=3.3.0",
+        "exeChecksum": 1623925506,
+        "osKind": 14,
+        "cpuKind": 6,
+        "titleId": "",
+        "validationSeed": 29453664,
+        "raceSettings": "Openplanet 1.29.14 (next, Public, 6fd4200f)"
+      },
+      "recordingId": "0b0c1c4c744b2af9ac24722866e098ae",
       "inputs": [
         {
           "version": 12,
@@ -90,10 +136,6 @@
           "length": 4,
           "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
         },
-        "0x0309201b": {
-          "length": 34,
-          "sha256": "15d2ce6716a6f9f736d3e97723be59f6a2c68f83d5fc6ede81cc6a8cdc918816"
-        },
         "0x03092022": {
           "length": 8,
           "sha256": "f0a0278e4372459cca6159cd5e71cfee638302a7b9ca9b05c34181ac0a65ac5d"
@@ -105,14 +147,6 @@
         "0x03092024": {
           "length": 8,
           "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
-        },
-        "0x03092025": {
-          "length": 168,
-          "sha256": "d7f7f7c084e0019fcf35b24091ab3016a7e89a73b471482b59d5aceb3a476d51"
-        },
-        "0x03092026": {
-          "length": 16,
-          "sha256": "46002aa9747515107c95664eff22d62db5ccb2ea9dbc97e2eb997e442185879e"
         },
         "0x03092027": {
           "length": 16,
@@ -130,10 +164,6 @@
           "length": 8,
           "sha256": "26a0ff4b6290ab7e7f29102e0381dddd5609ca4f52142f47919dddef013568fd"
         },
-        "0x0309202b": {
-          "length": 60,
-          "sha256": "de3e143bf7680c16852f30f70cb07a4c83625b70a12b0f4effbc359939ea2504"
-        },
         "0x0309202e": {
           "length": 4,
           "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
@@ -141,15 +171,11 @@
       },
       "unknownChunks": [
         "0x0309200a",
-        "0x0309201b",
         "0x03092024",
-        "0x03092025",
-        "0x03092026",
         "0x03092027",
         "0x03092028",
         "0x03092029",
         "0x0309202a",
-        "0x0309202b",
         "0x0309202e"
       ]
     }
@@ -290,15 +316,11 @@
   },
   "unknownChunks": [
     "0x0309200a",
-    "0x0309201b",
     "0x03092024",
-    "0x03092025",
-    "0x03092026",
     "0x03092027",
     "0x03092028",
     "0x03092029",
     "0x0309202a",
-    "0x0309202b",
     "0x0309202e"
   ]
 }

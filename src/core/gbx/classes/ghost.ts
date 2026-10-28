@@ -20,10 +20,14 @@ function createGhost(): Ghost {
     raceTimeMs: null,
     respawns: null,
     checkpoints: [],
+    checkpoints01b: null,
+    checkpoints02b: null,
     ghostVersion: null,
     inputs: [],
     wallTime: null,
     validation: null,
+    validation025: null,
+    recordingId: null,
     recordData: null,
     rawChunks: new Map(),
     unknownChunks: [],
@@ -101,6 +105,20 @@ function read00b(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
   }
 }
 
+// u32 version, u16 n, u16, u16, i32 total, n x i32 deltas, i32 -1
+function read01b(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
+  p!.u32()
+  const n = p!.u16()
+  p!.u16()
+  p!.u16()
+  const totalMs = p!.i32()
+  const deltasMs: number[] = []
+  for (let i = 0; i < n; i++) {
+    deltasMs.push(p!.i32())
+  }
+  g.checkpoints01b = { totalMs, deltasMs }
+}
+
 function read01d(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
   const version = p!.u32()
   const n = p!.u32()
@@ -116,6 +134,21 @@ function read01d(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
     }
     g.inputs.push({ version: v, u01, startOffsetMs, ticks, data })
   }
+}
+
+// u32 version, i32 total, i32, i32, i32, i32 n, n x (i32 time, i32 landmark), i32 -1
+function read02b(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
+  p!.u32()
+  const totalMs = p!.i32()
+  p!.i32()
+  p!.i32()
+  p!.i32()
+  const n = p!.i32()
+  const entries: { timeMs: number; landmark: number }[] = []
+  for (let i = 0; i < n; i++) {
+    entries.push({ timeMs: p!.i32(), landmark: p!.i32() })
+  }
+  g.checkpoints02b = { totalMs, entries }
 }
 
 function read02c(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
@@ -141,10 +174,53 @@ function read02d(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
   const validationSeed = p!.i32()
   p!.i32()
   const raceSettings = p!.string()
-  g.validation = { exeVersion, exeChecksum, osKind, cpuKind, titleId, validationSeed, raceSettings }
+  g.validation = {
+    source: '02D',
+    startUnixSec,
+    endUnixSec,
+    exeVersion,
+    exeChecksum,
+    osKind,
+    cpuKind,
+    titleId,
+    validationSeed,
+    raceSettings,
+  }
   if (!g.wallTime) {
     g.wallTime = { startUnixSec, endUnixSec, source: '02D' }
   }
+}
+
+// 025: u32 1, 20 bytes, exe string, checksum, os, cpu, settings string, seed, i32. read before 02D
+// (lower id), so it stands in until 02D overrides it
+function read025(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
+  p!.u32()
+  p!.bytes(20)
+  const exeVersion = p!.string()
+  const exeChecksum = p!.u32()
+  const osKind = p!.i32()
+  const cpuKind = p!.i32()
+  const raceSettings = p!.string()
+  const validationSeed = p!.i32()
+  g.validation025 = {
+    source: '025',
+    startUnixSec: null,
+    endUnixSec: null,
+    exeVersion,
+    exeChecksum,
+    osKind,
+    cpuKind,
+    titleId: '',
+    validationSeed,
+    raceSettings,
+  }
+  if (!g.validation) {
+    g.validation = g.validation025
+  }
+}
+
+function read026(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
+  g.recordingId = Array.from(p!.bytes(16), (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
 const keepRaw =
@@ -212,6 +288,7 @@ export const GhostDef: ClassDef<Ghost> = {
       },
     ],
     [0x0309201a, () => {}],
+    [0x0309201b, read01b],
     [
       0x0309201c,
       (ctx) => {
@@ -221,6 +298,9 @@ export const GhostDef: ClassDef<Ghost> = {
     [0x0309201d, read01d],
     [0x03092022, keepRaw(0x03092022)],
     [0x03092023, keepRaw(0x03092023)],
+    [0x03092025, read025],
+    [0x03092026, read026],
+    [0x0309202b, read02b],
     [0x0309202c, read02c],
     [0x0309202d, read02d],
   ]),

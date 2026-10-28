@@ -6,6 +6,18 @@ import { fakeCtx } from './signals/test-util.ts'
 import type { Inflate } from './model.ts'
 import { minimalGhostBody, uncompressedGbx } from '../test/minimal-ghost.ts'
 import { loadFixture } from '../test/fixtures.ts'
+import { patchSkippable, uncompressedCopy } from '../test/gbx-mutate.ts'
+
+// one nonzero byte behind the input stream
+function trailingInputByte(bytes: Uint8Array): Uint8Array {
+  return patchSkippable(bytes, 0x0309201d, (p) => {
+    const out = new Uint8Array(p.length + 1)
+    out.set(p)
+    out[p.length] = 0xff
+    new DataView(out.buffer).setUint32(24, p.length - 28 + 1, true)
+    return out
+  })
+}
 
 const nodeInflate: Inflate = (c) => new Uint8Array(inflateSync(c))
 
@@ -42,6 +54,39 @@ describe('analyzeBytes', () => {
     expect(report.files[0]!.signals[0]!.evidence[0]).toMatch(/ticks/)
     expect(report.files[1]!.login).toBe('u8IfOUGVSWOUnBrRSa-lFg')
     expect(report.files[1]!.signals.length).toBeGreaterThan(5)
+  })
+})
+
+describe('decode failures', () => {
+  test('a trailing input byte fires decode_failure and needs review', async () => {
+    const bytes = trailingInputByte(loadFixture('slidrz'))
+    const r = (await analyzeBytes([{ name: 'x', bytes }], null, nodeInflate)).files[0]!
+    const s = r.signals.find((x) => x.id === 'decode_failure')!
+    expect(s.level).toBe('absolute')
+    expect(s.fired).toBe(true)
+    expect(s.evidence.join(' ')).toMatch(/trailing/)
+    expect(r.summary.needsHumanReview).toBe(true)
+  })
+
+  test('a file that is not gbx is an error without review', async () => {
+    const files = [{ name: 'x', bytes: new Uint8Array([1, 2, 3]) }]
+    const r = (await analyzeBytes(files, null, nodeInflate)).files[0]!
+    expect(r.login).toBe('')
+    expect(r.summary.needsHumanReview).toBe(false)
+  })
+
+  test('a body that fails to parse is an error that needs review', async () => {
+    const bytes = uncompressedCopy(loadFixture('slidrz')).slice(0, 2000)
+    const r = (await analyzeBytes([{ name: 'x', bytes }], null, nodeInflate)).files[0]!
+    expect(r.login).toBe('')
+    expect(r.summary.needsHumanReview).toBe(true)
+  })
+
+  test('decode_failure is not applicable without inputs or record data', () => {
+    const ctx = fakeCtx({ ghost: { inputs: [], recordData: null } })
+    const s = analyzeFiles([ctx], null).files[0]!.signals.find((x) => x.id === 'decode_failure')!
+    expect(s.applicable).toBe(false)
+    expect(s.fired).toBe(false)
   })
 })
 

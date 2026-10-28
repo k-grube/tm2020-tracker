@@ -1,6 +1,6 @@
 import { REPEAT_MIN_DISTINCT_VALUES, REPEAT_MIN_LEN_TICKS, TICK_MS } from './constants.ts'
-import { notApplicable, relativeResult } from './relative.ts'
-import type { Detector } from './types.ts'
+import { notApplicable } from './relative.ts'
+import type { Detector, SignalResult } from './types.ts'
 
 const BASE = 31
 
@@ -68,9 +68,9 @@ function findRepeat(steer: Int8Array, length: number): Repeat | null {
 }
 
 // pad only: longest stretch of analog steering that appears twice, byte for byte
-export const steerRepetition: Detector = (ctx, baseline) => {
+export const steerRepetition: Detector = (ctx) => {
   if (ctx.device !== 'pad' || !ctx.steer) {
-    return notApplicable('steer_repetition', 'relative', `device ${ctx.device}, pad only`)
+    return notApplicable('steer_repetition', 'empirical', `device ${ctx.device}, pad only`)
   }
   const steer = ctx.steer
   let best: Repeat | null = findRepeat(steer, REPEAT_MIN_LEN_TICKS)
@@ -94,14 +94,16 @@ export const steerRepetition: Detector = (ctx, baseline) => {
         `${best.length} ticks (${best.length * TICK_MS} ms) repeated at ${best.first * TICK_MS} ms and ${best.second * TICK_MS} ms, ${best.distinct} distinct values`,
       ]
     : [`no exact repeat of ${REPEAT_MIN_LEN_TICKS} ticks or more`]
-  const result = relativeResult(
-    'steer_repetition',
-    best?.length ?? 0,
-    'ticks',
+  const result: SignalResult = {
+    id: 'steer_repetition',
+    level: 'empirical',
+    applicable: true,
+    fired: best !== null,
+    value: best?.length ?? 0,
+    unit: 'ticks',
     evidence,
-    baseline,
-    ctx.device,
-  )
+    references: [],
+  }
   if (!best) {
     return result
   }

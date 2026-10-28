@@ -4,7 +4,7 @@ import { ParseError } from '../io/errors.ts'
 import type { PlayerInputData } from '../model.ts'
 import { parseGhostFixture } from '../../test/ghost.ts'
 import { parseGbx } from '../parse.ts'
-import { loadFixture, type FixtureName } from '../../test/fixtures.ts'
+import { loadCorpusFixture, loadFixture, type FixtureName } from '../../test/fixtures.ts'
 
 const ghostOf = (name: FixtureName) => parseGbx(loadFixture(name)).ghosts[0]!
 
@@ -178,5 +178,29 @@ describe('state kinds', () => {
     const manual = decodeInputs(ghostOf('localReplay').inputs[0]!)
     const auto = decodeInputs(ghostOf('localPbReplay').inputs[0]!)
     expect(manual).toEqual(auto)
+  })
+})
+
+describe('stream structure fields', () => {
+  test('decoder reports the first vehicle tick, the kind sequence and the min steer', () => {
+    const d = decodeInputStream(ghostOf('slidrz').inputs[0]!)
+    expect(d.kinds).toEqual([2])
+    expect(d.firstVehicleTick).toBe(0)
+    expect(d.minSteer).toBe(-127)
+    const finished = decodeInputStream(parseGbx(loadCorpusFixture('jdon')).ghosts[0]!.inputs[0]!)
+    expect(finished.kinds).toEqual([2, 15])
+  })
+
+  test('fields are null on an empty stream', () => {
+    const d = decodeInputStream({
+      version: 12,
+      u01: 0,
+      startOffsetMs: 0,
+      ticks: 0,
+      data: new Uint8Array(0),
+    })
+    expect(d.kinds).toEqual([])
+    expect(d.firstVehicleTick).toBeNull()
+    expect(d.minSteer).toBeNull()
   })
 })

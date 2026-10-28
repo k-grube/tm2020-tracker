@@ -149,6 +149,9 @@ describe('metadata', () => {
       fakeCtx({
         ghost: {
           validation: {
+            source: '02D',
+            startUnixSec: null,
+            endUnixSec: null,
             exeVersion: 'Trackmania date=2026-02-02',
             exeChecksum: 1,
             osKind: 2,
@@ -238,5 +241,25 @@ describe('ticks_vs_racetime span', () => {
       null,
     )
     expect(r.spans).toBeUndefined()
+  })
+})
+
+describe('invalid wall time end', () => {
+  const ctxWith = (startUnixSec: number, endUnixSec: number) =>
+    fakeCtx({ ghost: { wallTime: { startUnixSec, endUnixSec, source: '02C' }, raceTimeMs: 20000 } })
+
+  test('end 0xffffffff gives no wall time signals', () => {
+    const ctx = ctxWith(10, 0xffffffff)
+    expect(wallTimeDelta(ctx, null).applicable).toBe(false)
+    expect(wallTimeRatio(ctx, null).applicable).toBe(false)
+    expect(wallTimeDelta(ctx, null).evidence[0]).toContain('invalid')
+  })
+
+  test('end before start gives no wall time signals', () => {
+    expect(wallTimeDelta(ctxWith(100, 90), null).applicable).toBe(false)
+  })
+
+  test('a normal window still applies', () => {
+    expect(wallTimeDelta(ctxWith(100, 121), null).applicable).toBe(true)
   })
 })

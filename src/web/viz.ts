@@ -1,3 +1,4 @@
+import { pickGhost } from '../core/signals/context.ts'
 import { parseGbx } from '../core/parse.ts'
 import { decodeInputs, steerSeries } from '../core/inputs/decode.ts'
 import type { Checkpoint, InputEvent } from '../core/model.ts'
@@ -12,7 +13,7 @@ export interface FileViz {
 // chart data for one file, null when the file does not parse (the report carries the error)
 export function fileViz(bytes: Uint8Array): FileViz | null {
   try {
-    const ghost = parseGbx(bytes).ghosts[0]
+    const ghost = pickGhost(parseGbx(bytes))
     if (!ghost) {
       return null
     }

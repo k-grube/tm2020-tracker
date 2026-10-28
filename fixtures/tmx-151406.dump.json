@@ -90,6 +90,86 @@
           "stuntsScore": 0
         }
       ],
+      "checkpoints01b": {
+        "totalMs": 78321,
+        "deltasMs": [
+          11626,
+          6645,
+          6030,
+          3792,
+          2968,
+          4849,
+          6878,
+          5340,
+          8360,
+          4429,
+          5110,
+          2168,
+          5475,
+          4651
+        ]
+      },
+      "checkpoints02b": {
+        "totalMs": 78321,
+        "entries": [
+          {
+            "timeMs": 11626,
+            "landmark": 14
+          },
+          {
+            "timeMs": 18271,
+            "landmark": 1
+          },
+          {
+            "timeMs": 24301,
+            "landmark": 4
+          },
+          {
+            "timeMs": 28093,
+            "landmark": 0
+          },
+          {
+            "timeMs": 31061,
+            "landmark": 8
+          },
+          {
+            "timeMs": 35910,
+            "landmark": 9
+          },
+          {
+            "timeMs": 42788,
+            "landmark": 11
+          },
+          {
+            "timeMs": 48128,
+            "landmark": 2
+          },
+          {
+            "timeMs": 56488,
+            "landmark": 3
+          },
+          {
+            "timeMs": 60917,
+            "landmark": 10
+          },
+          {
+            "timeMs": 66027,
+            "landmark": 12
+          },
+          {
+            "timeMs": 68195,
+            "landmark": 5
+          },
+          {
+            "timeMs": 73670,
+            "landmark": 6
+          },
+          {
+            "timeMs": 78321,
+            "landmark": 7
+          }
+        ]
+      },
       "ghostVersion": 8,
       "wallTime": {
         "startUnixSec": 1644819350,
@@ -97,6 +177,9 @@
         "source": "02C"
       },
       "validation": {
+        "source": "02D",
+        "startUnixSec": 1644819350,
+        "endUnixSec": 1644819430,
         "exeVersion": "Trackmania date=2022-01-21_15_54 git=105900-6a6c3d990d2 GameVersion=3.3.0",
         "exeChecksum": 726787968,
         "osKind": 14,
@@ -105,6 +188,19 @@
         "validationSeed": 0,
         "raceSettings": ""
       },
+      "validation025": {
+        "source": "025",
+        "startUnixSec": null,
+        "endUnixSec": null,
+        "exeVersion": "Trackmania date=2022-01-21_15_54 git=105900-6a6c3d990d2 GameVersion=3.3.0",
+        "exeChecksum": 726787968,
+        "osKind": 14,
+        "cpuKind": 6,
+        "titleId": "",
+        "validationSeed": 0,
+        "raceSettings": ""
+      },
+      "recordingId": "4de3ae61e87ae6659381e55ca87dc9ee",
       "inputs": [
         {
           "version": 12,
@@ -130,10 +226,6 @@
           "length": 4,
           "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
         },
-        "0x0309201b": {
-          "length": 74,
-          "sha256": "4af76bfc262dcc748256d68a92ca4fef03dcb50510ca35369986a0a12cf059f4"
-        },
         "0x03092022": {
           "length": 8,
           "sha256": "f0a0278e4372459cca6159cd5e71cfee638302a7b9ca9b05c34181ac0a65ac5d"
@@ -145,14 +237,6 @@
         "0x03092024": {
           "length": 8,
           "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
-        },
-        "0x03092025": {
-          "length": 125,
-          "sha256": "98e394c8ab3167fd4a9f1b4b53d84224a71c6426209ef692f7ff9844fa59c2ff"
-        },
-        "0x03092026": {
-          "length": 16,
-          "sha256": "163df029e89e0674d0e206711dc0720067f98a7f1509a1d2b5000d74e0fb57dc"
         },
         "0x03092027": {
           "length": 16,
@@ -169,23 +253,15 @@
         "0x0309202a": {
           "length": 8,
           "sha256": "828c68ec8aac70ba0ca148198551859a17558762c78a7499d4b2adb7f6ef6d4a"
-        },
-        "0x0309202b": {
-          "length": 140,
-          "sha256": "dd1c078d40e4b1971b052d5a1576462dd3943e119737f8f4a96f214a5693e32b"
         }
       },
       "unknownChunks": [
         "0x0309200a",
-        "0x0309201b",
         "0x03092024",
-        "0x03092025",
-        "0x03092026",
         "0x03092027",
         "0x03092028",
         "0x03092029",
-        "0x0309202a",
-        "0x0309202b"
+        "0x0309202a"
       ]
     }
   ],
@@ -326,14 +402,10 @@
   },
   "unknownChunks": [
     "0x0309200a",
-    "0x0309201b",
     "0x03092024",
-    "0x03092025",
-    "0x03092026",
     "0x03092027",
     "0x03092028",
     "0x03092029",
-    "0x0309202a",
-    "0x0309202b"
+    "0x0309202a"
   ]
 }

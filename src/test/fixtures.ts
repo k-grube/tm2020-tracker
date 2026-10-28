@@ -12,13 +12,29 @@ export const FIXTURES = {
 // current-build replays driven 2026-10-27, race time 21278 ms, wall time about the same
 export const LOCAL_REPLAY_RACE_TIME_MS = 21278
 
+// real tmx records kept for parser regressions, no dump goldens
+export const CORPUS_FIXTURES = {
+  jdon: 'jdon._(0053742)_lapislazuli.Ghost.Gbx',
+  propanoia: 'propanoia_(0057655)_shards-of-eternity.Ghost.Gbx',
+  deleteCheatWRs: 'DeleteCheatWRs_(0019869)_fall-2026-01.Ghost.Gbx',
+} as const
+
 export type FixtureName = keyof typeof FIXTURES
+export type CorpusFixtureName = keyof typeof CORPUS_FIXTURES
+
+function readBytes(file: string): Uint8Array {
+  const buf = readFileSync(fileURLToPath(new URL(`../../fixtures/${file}`, import.meta.url)))
+  return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
+}
 
 export function fixturePath(name: FixtureName): string {
   return fileURLToPath(new URL(`../../fixtures/${FIXTURES[name]}`, import.meta.url))
 }
 
 export function loadFixture(name: FixtureName): Uint8Array {
-  const buf = readFileSync(fixturePath(name))
-  return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
+  return readBytes(FIXTURES[name])
+}
+
+export function loadCorpusFixture(name: CorpusFixtureName): Uint8Array {
+  return readBytes(CORPUS_FIXTURES[name])
 }

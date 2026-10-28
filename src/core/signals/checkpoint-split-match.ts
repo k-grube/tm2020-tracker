@@ -1,16 +1,14 @@
 import { notApplicable } from './relative.ts'
+import { sameRecording } from './same-recording.ts'
 import type { FileContext, SignalResult } from './types.ts'
 
 // identical checkpoint times to the millisecond across two runs by one player
 export function checkpointSplitMatch(a: FileContext, b: FileContext): SignalResult {
   const ca = a.ghost.checkpoints
   const cb = b.ghost.checkpoints
-  if (a.ghost.ghostUid && a.ghost.ghostUid === b.ghost.ghostUid) {
-    return notApplicable(
-      'checkpoint_split_match',
-      'info',
-      'same ghost uid, one recording saved twice',
-    )
+  const same = sameRecording(a, b)
+  if (same) {
+    return notApplicable('checkpoint_split_match', 'info', same)
   }
   if (ca.length === 0 || cb.length === 0) {
     return notApplicable('checkpoint_split_match', 'info', 'needs checkpoints on both files')

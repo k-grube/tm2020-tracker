@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { parseGbx } from './parse.ts'
 import { UnsupportedError } from './io/errors.ts'
 import { LOCAL_REPLAY_RACE_TIME_MS, loadFixture } from '../test/fixtures.ts'
+import { patchSkippable } from '../test/gbx-mutate.ts'
 
 const u32 = (n: number) => [n & 0xff, (n >>> 8) & 0xff, (n >>> 16) & 0xff, (n >>> 24) & 0xff]
 const str = (s: string) => {
@@ -127,5 +128,36 @@ describe('parseGbx', () => {
     const bytes = replayWithClip()
     bytes[11] = 0x04
     expect(() => parseGbx(bytes)).toThrow(UnsupportedError)
+  })
+})
+
+describe('validation copy and recording id', () => {
+  test('025 duplicates 02D on slidrz', () => {
+    const g = parseGbx(loadFixture('slidrz')).ghosts[0]!
+    expect(g.validation!.source).toBe('02D')
+    expect(g.validation!.startUnixSec).toBe(1754498149)
+    expect(g.validation!.endUnixSec).toBe(1754498174)
+    expect(g.validation025!.source).toBe('025')
+    expect(g.validation025!.exeVersion).toBe(g.validation!.exeVersion)
+    expect(g.validation025!.exeChecksum).toBe(g.validation!.exeChecksum)
+    expect(g.validation025!.raceSettings).toBe(g.validation!.raceSettings)
+    expect(g.validation025!.validationSeed).toBe(26593895)
+    expect(g.validation025!.startUnixSec).toBeNull()
+    expect(g.recordingId).toMatch(/^[0-9a-f]{32}$/)
+    expect(g.unknownChunks).not.toContain(0x03092025)
+    expect(g.unknownChunks).not.toContain(0x03092026)
+  })
+
+  test('02D version 1 falls back to 025', () => {
+    const bytes = patchSkippable(loadFixture('slidrz'), 0x0309202d, (p) => {
+      const out = p.slice()
+      out[0] = 1
+      return out
+    })
+    const g = parseGbx(bytes).ghosts[0]!
+    expect(g.validation!.source).toBe('025')
+    expect(g.validation!.exeVersion).toContain('date=2025-07-04')
+    expect(g.validation!.validationSeed).toBe(26593895)
+    expect(g.wallTime!.source).toBe('02C')
   })
 })

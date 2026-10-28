@@ -18,10 +18,14 @@ export function fakeGhost(over: Partial<Ghost> = {}): Ghost {
     raceTimeMs: 25000,
     respawns: 0,
     checkpoints: [{ timeMs: 25000, stuntsScore: null }],
+    checkpoints01b: null,
+    checkpoints02b: null,
     ghostVersion: null,
     inputs: [{ version: 12, u01: 0, startOffsetMs: 0, ticks: 2500, data: new Uint8Array(0) }],
     wallTime: null,
     validation: null,
+    validation025: null,
+    recordingId: null,
     recordData: null,
     rawChunks: new Map(),
     unknownChunks: [],
@@ -42,6 +46,11 @@ export function fakeCtx(
     steer: null,
     samples: null,
     decodedTicks: null,
+    inputError: null,
+    samplesError: null,
+    firstVehicleTick: null,
+    kinds: [],
+    minSteer: null,
     device: 'unknown',
     ...rest,
   }
@@ -71,5 +80,12 @@ export function steerEvents(values: number[], everyTicks = 1): InputEvent[] {
 }
 
 export function fakeSamples(positions: [number, number, number][], stepMs = 10): Sample[] {
-  return positions.map((position, i) => ({ timeMs: i * stepMs, position, speedMs: 10 }))
+  return positions.map((position, i) => ({
+    timeMs: i * stepMs,
+    position,
+    speedMs: 10,
+    steer: 0,
+    gas: true,
+    brake: false,
+  }))
 }

@@ -1,9 +1,10 @@
 import type { TmxClient } from './tmx.ts'
-import type { TmioClient } from './tmio.ts'
+import { ghostFilename, type TmioClient } from './tmio.ts'
 
 export interface FetchFs {
   writeFile(path: string, data: Uint8Array | string): void
   readText(path: string): string | null
+  exists(path: string): boolean
 }
 
 export interface FetchOptions {
@@ -49,9 +50,14 @@ export async function fetchCommand(
   const indexPath = `${opts.out}/index.json`
   const index = readIndex(fs, indexPath)
   const lines: string[] = []
+  // the index is rewritten after every file so an aborted pull keeps its positions
+  const writeIndex = (): void => {
+    fs.writeFile(indexPath, JSON.stringify(index, null, 2) + '\n')
+  }
   const save = (filename: string, bytes: Uint8Array, entry: IndexEntry): void => {
     fs.writeFile(`${opts.out}/${filename}`, bytes)
     index[filename] = entry
+    writeIndex()
     lines.push(filename)
   }
 
@@ -104,25 +110,34 @@ export async function fetchCommand(
     for (const m of campaign.maps) {
       const records = await opts.tmio.leaderboard(m.mapUid, opts.count)
       for (const rec of records) {
-        if (!first) {
-          await sleep()
-        }
-        first = false
-        const dl = await opts.tmio.downloadGhost(rec.url, rec.player.name, rec.time, m.name)
-        save(dl.filename, dl.bytes, {
+        const filename = ghostFilename(rec.player.name, rec.time, m.name)
+        const entry: IndexEntry = {
           recordId: rec.url.split('/').pop() ?? null,
           replayId: null,
           position: rec.position,
           mapId: 0,
           mapUid: m.mapUid,
           recordTimeMs: rec.time,
-        })
+        }
+        // a file from an earlier pull keeps its bytes and gets its index entry
+        if (fs.exists(`${opts.out}/${filename}`)) {
+          index[filename] = entry
+          writeIndex()
+          lines.push(`${filename} kept`)
+          continue
+        }
+        if (!first) {
+          await sleep()
+        }
+        first = false
+        const dl = await opts.tmio.downloadGhost(rec.url, rec.player.name, rec.time, m.name)
+        save(filename, dl.bytes, entry)
       }
     }
   } else {
     throw new Error('fetch needs --map, --campaign, --ghost or --search')
   }
 
-  fs.writeFile(indexPath, JSON.stringify(index, null, 2) + '\n')
+  writeIndex()
   return lines
 }

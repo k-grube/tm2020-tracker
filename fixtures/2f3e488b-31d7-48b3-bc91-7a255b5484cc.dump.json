@@ -61,6 +61,66 @@
           "stuntsScore": 0
         }
       ],
+      "checkpoints01b": {
+        "totalMs": 44747,
+        "deltasMs": [
+          3778,
+          3797,
+          4900,
+          3513,
+          5076,
+          5618,
+          4773,
+          6160,
+          3393,
+          3739
+        ]
+      },
+      "checkpoints02b": {
+        "totalMs": 44747,
+        "entries": [
+          {
+            "timeMs": 3778,
+            "landmark": 9
+          },
+          {
+            "timeMs": 7575,
+            "landmark": 7
+          },
+          {
+            "timeMs": 12475,
+            "landmark": 8
+          },
+          {
+            "timeMs": 15988,
+            "landmark": 14
+          },
+          {
+            "timeMs": 21064,
+            "landmark": 10
+          },
+          {
+            "timeMs": 26682,
+            "landmark": 11
+          },
+          {
+            "timeMs": 31455,
+            "landmark": 0
+          },
+          {
+            "timeMs": 37615,
+            "landmark": 1
+          },
+          {
+            "timeMs": 41008,
+            "landmark": 12
+          },
+          {
+            "timeMs": 44747,
+            "landmark": 4
+          }
+        ]
+      },
       "ghostVersion": 8,
       "wallTime": {
         "startUnixSec": 1793136562,
@@ -68,6 +128,9 @@
         "source": "02C"
       },
       "validation": {
+        "source": "02D",
+        "startUnixSec": 1793136562,
+        "endUnixSec": 1793136608,
         "exeVersion": "Trackmania date=2026-07-22_18_27 git=128191-5daf0c5ba60 GameVersion=3.3.0",
         "exeChecksum": 1782355961,
         "osKind": 14,
@@ -76,6 +139,19 @@
         "validationSeed": 40774347,
         "raceSettings": "Openplanet 1.29.14 (next, Public, 6fd4200f)"
       },
+      "validation025": {
+        "source": "025",
+        "startUnixSec": null,
+        "endUnixSec": null,
+        "exeVersion": "Trackmania date=2026-07-22_18_27 git=128191-5daf0c5ba60 GameVersion=3.3.0",
+        "exeChecksum": 1782355961,
+        "osKind": 14,
+        "cpuKind": 6,
+        "titleId": "",
+        "validationSeed": 40774347,
+        "raceSettings": "Openplanet 1.29.14 (next, Public, 6fd4200f)"
+      },
+      "recordingId": "bdc867bdc5e81409733474c69cb072d7",
       "inputs": [
         {
           "version": 12,
@@ -101,10 +177,6 @@
           "length": 4,
           "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
         },
-        "0x0309201b": {
-          "length": 58,
-          "sha256": "f9b6cf8a926d4c36313ac9a6aab8d6945c02bc59e421c9b9ab0960b08e494bb1"
-        },
         "0x03092022": {
           "length": 8,
           "sha256": "f0a0278e4372459cca6159cd5e71cfee638302a7b9ca9b05c34181ac0a65ac5d"
@@ -116,14 +188,6 @@
         "0x03092024": {
           "length": 8,
           "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
-        },
-        "0x03092025": {
-          "length": 168,
-          "sha256": "f0f545a86e33e4f7efe440dfca4c32bc9b2c013e49ecc1a7b8d176d3dbb6d100"
-        },
-        "0x03092026": {
-          "length": 16,
-          "sha256": "c99c5849acd1a5d763abd9dc32a55386dc6905d05628d303e5c73cf0db56a4e7"
         },
         "0x03092027": {
           "length": 16,
@@ -141,10 +205,6 @@
           "length": 8,
           "sha256": "88da6edb81f73e9a9915b5c82db14183b7207f66f7b11bddc8c25a132911dc73"
         },
-        "0x0309202b": {
-          "length": 108,
-          "sha256": "2c6b6f70dc13077d5efe2cd13cdfd4816f7f18411bb5a2765bd43ccb05770ed4"
-        },
         "0x0309202e": {
           "length": 4,
           "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
@@ -152,15 +212,11 @@
       },
       "unknownChunks": [
         "0x0309200a",
-        "0x0309201b",
         "0x03092024",
-        "0x03092025",
-        "0x03092026",
         "0x03092027",
         "0x03092028",
         "0x03092029",
         "0x0309202a",
-        "0x0309202b",
         "0x0309202e"
       ]
     }
@@ -302,15 +358,11 @@
   },
   "unknownChunks": [
     "0x0309200a",
-    "0x0309201b",
     "0x03092024",
-    "0x03092025",
-    "0x03092026",
     "0x03092027",
     "0x03092028",
     "0x03092029",
     "0x0309202a",
-    "0x0309202b",
     "0x0309202e"
   ]
 }

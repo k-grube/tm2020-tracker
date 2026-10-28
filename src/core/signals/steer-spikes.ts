@@ -1,6 +1,7 @@
 import { REF_2021, SPIKE_WINDOW_MS, STEER_SPIKE_MIN_DELTA, TICK_MS } from './constants.ts'
 import { notApplicable, relativeResult } from './relative.ts'
 import type { Detector, Reference, Span } from './types.ts'
+import { raceWindow } from './window.ts'
 
 const REFERENCES: Reference[] = [
   {
@@ -17,23 +18,29 @@ const REFERENCES: Reference[] = [
   },
 ]
 
-// the 2021 metric: steer direction changes per second, ignoring tiny deltas
+// the 2021 metric: steer direction changes per second over the race window, ignoring tiny deltas
 export const steerSpikes: Detector = (ctx, baseline) => {
   const steer = ctx.steer
   if (!steer || steer.length < 2) {
     return notApplicable('steer_spikes_per_sec', 'relative', 'no steer series')
   }
+  const win = raceWindow(ctx)
+  const start = win?.startTick ?? 0
+  const end = Math.min(win?.endTick ?? steer.length, steer.length)
+  if (end - start < 2) {
+    return notApplicable('steer_spikes_per_sec', 'relative', 'race window shorter than 2 ticks')
+  }
   const windowTicks = SPIKE_WINDOW_MS / TICK_MS
-  const windows = new Array<number>(Math.ceil(steer.length / windowTicks)).fill(0)
+  const windows = new Array<number>(Math.ceil((end - start) / windowTicks)).fill(0)
   let prevSign = 0
-  for (let t = 1; t < steer.length; t++) {
+  for (let t = start + 1; t < end; t++) {
     const d = steer[t]! - steer[t - 1]!
     if (Math.abs(d) < STEER_SPIKE_MIN_DELTA) {
       continue
     }
     const sign = d > 0 ? 1 : -1
     if (prevSign !== 0 && sign !== prevSign) {
-      windows[Math.floor(t / windowTicks)]!++
+      windows[Math.floor((t - start) / windowTicks)]!++
     }
     prevSign = sign
   }
@@ -41,8 +48,8 @@ export const steerSpikes: Detector = (ctx, baseline) => {
   windows.forEach((count, w) => {
     if (count >= REF_2021.avgMaxSpikesPerSec) {
       spans.push({
-        startTick: w * windowTicks,
-        endTick: Math.min((w + 1) * windowTicks, steer.length),
+        startTick: start + w * windowTicks,
+        endTick: Math.min(start + (w + 1) * windowTicks, end),
         label: `${count} spikes/s`,
       })
     }

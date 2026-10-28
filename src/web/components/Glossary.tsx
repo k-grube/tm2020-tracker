@@ -1,5 +1,9 @@
 const ENTRIES: [string, string][] = [
   [
+    'decode_failure',
+    'the input stream or the position samples did not decode, the line says which one and why',
+  ],
+  [
     'wall_time_delta',
     'wall clock minus race timer, in seconds. slow-mo keeps the clock running while the timer crawls, so the gap grows with race length. clean records sit +0.2 to +2.2 s. a freeze or lag spike also adds seconds, check the other files of that player before reading anything into one',
   ],
@@ -10,6 +14,26 @@ const ENTRIES: [string, string][] = [
   [
     'ticks_vs_racetime',
     'checks the input stream reaches the finish. inputs that stop early were cut or edited. extra ticks after the finish are normal, manual saves keep a few seconds',
+  ],
+  [
+    'validation_consistency',
+    'the two validation copies (chunks 02D and 025), the two recording windows (02C and 02D), the build date against the recording start, and a zero seed on a build after 2021. lists the rule that failed',
+  ],
+  [
+    'checkpoint_consistency',
+    'the split times are stored three times (chunks 00B, 01B, 02B) and the race time twice more. every copy must agree and the last split must equal the race time',
+  ],
+  [
+    'sample_input_match',
+    'every 50 ms position sample also stores the steer, gas and brake the engine applied. compares them with the input stream at that tick, an action key caps the applied steer and is allowed. a run whose inputs were edited without rewriting the samples shows a high mismatch share. keyboard steer is ramped by the game, so only gas is compared there',
+  ],
+  [
+    'position_continuity',
+    'distance between consecutive position samples against the recorded speed times the gap. a jump is a teleport. the ghost declares its respawn count, every jump beyond that count is a seam or an edited position',
+  ],
+  [
+    'input_structure',
+    'shape of the input stream: one entry, one contiguous vehicle state block, the vehicle state inside the first 38 ticks, steer never below -127. lists the rule that failed',
   ],
   [
     'same_tick_toggle',
@@ -29,11 +53,15 @@ const ENTRIES: [string, string][] = [
   ],
   [
     'steer_repetition',
-    'longest stretch of analog stick values that repeats exactly later in the file. a repeat of 50 ticks or more to the step points at playback',
+    'longest stretch of analog stick values that repeats exactly later in the file. a repeat of 50 ticks or more with 8 distinct values in the window points at playback',
   ],
   [
     'trajectory_overlap',
-    'two records on one map within 10 cm of each other for seconds. real drivers separate within a second of the start, a copied ghost tracks the original. needs two files on the same map',
+    'two records on one map within 10 cm of each other for 6 s or more, at any time offset up to 2 s. a copied ghost or a copied segment tracks the original. needs two files on the same map',
+  ],
+  [
+    'split_copy',
+    'two logins, same map: the same ghost uid or recording id under both logins, or four or more split times identical to the ms at the same checkpoint. needs two files on the same map from different players',
   ],
   [
     'checkpoint_split_match',
@@ -52,9 +80,10 @@ export function Glossary() {
         what the checks look for
       </summary>
       <p className="mt-2 text-zinc-500">
-        absolute: the game cannot produce it, one hit flags the file. relative: outside the
-        top-record range for the device, needs the baseline, two hits flag the file. info: shown,
-        never fires. red bars on the steer trace mark the ticks a fired check points at
+        absolute: one file contradicts itself, one hit flags the file. empirical: a fixed rule not
+        seen in 1247 legit records, one hit flags the file. relative: outside the top-record range
+        for the device, needs the baseline, two hits flag the file. info: shown, never fires. red
+        bars on the steer trace mark the ticks a fired check points at
       </p>
       <dl className="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-[max-content_1fr]">
         {ENTRIES.map(([id, text]) => (

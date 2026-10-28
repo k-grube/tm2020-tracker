@@ -21,6 +21,7 @@ export function FileReportView({ report, viz }: { report: FileReport; viz: FileV
       >
         needs human review: {summary.needsHumanReview ? 'yes' : 'no'}
         {summary.absoluteFired.length > 0 && <>, absolute: {summary.absoluteFired.join(' ')}</>}
+        {summary.empiricalFired.length > 0 && <>, empirical: {summary.empiricalFired.join(' ')}</>}
         {summary.relativeOutside.length > 0 && (
           <>, outside reference: {summary.relativeOutside.join(' ')}</>
         )}

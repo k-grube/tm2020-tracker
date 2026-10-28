@@ -1,4 +1,4 @@
-import { WALL_TIME_RESOLUTION_S } from './constants.ts'
+import { UNSET_U32, WALL_TIME_RESOLUTION_S } from './constants.ts'
 import { notApplicable, relativeResult } from './relative.ts'
 import type { Detector, SignalId, SignalResult } from './types.ts'
 
@@ -12,6 +12,9 @@ function wallAndRace(
   }
   if (!raceTimeMs || raceTimeMs <= 0) {
     return notApplicable(id, 'relative', 'no race time')
+  }
+  if (wallTime.endUnixSec === UNSET_U32 || wallTime.endUnixSec < wallTime.startUnixSec) {
+    return notApplicable(id, 'relative', `invalid wall time end ${wallTime.endUnixSec}`)
   }
   return [wallTime.endUnixSec - wallTime.startUnixSec, raceTimeMs / 1000, wallTime.source]
 }

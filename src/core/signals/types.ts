@@ -1,9 +1,15 @@
 import type { Ghost, InputEvent, ParsedFile, Sample } from '../model.ts'
 
 export const SIGNAL_IDS = [
+  'decode_failure',
   'wall_time_ratio',
   'wall_time_delta',
   'ticks_vs_racetime',
+  'validation_consistency',
+  'checkpoint_consistency',
+  'sample_input_match',
+  'position_continuity',
+  'input_structure',
   'same_tick_toggle',
   'steer_spikes_per_sec',
   'input_density',
@@ -11,13 +17,15 @@ export const SIGNAL_IDS = [
   'steer_repetition',
   'trajectory_overlap',
   'checkpoint_split_match',
+  'split_copy',
   'metadata',
 ] as const
 
 export type SignalId = (typeof SIGNAL_IDS)[number]
 
-// absolute: the engine makes it impossible, relative: outlier against a reference, info: context only
-export type SignalLevel = 'absolute' | 'relative' | 'info'
+// absolute: one file contradicts itself, empirical: fixed rule never seen in the legit corpus,
+// relative: outlier against a reference, info: context only
+export type SignalLevel = 'absolute' | 'empirical' | 'relative' | 'info'
 
 export type Device = 'keyboard' | 'pad' | 'mixed' | 'unknown'
 
@@ -56,6 +64,13 @@ export interface FileContext {
   samples: Sample[] | null
   // ticks the input decoder actually read, null without decodable inputs
   decodedTicks: number | null
+  // decoder messages, null when that stage decoded or had nothing to decode
+  inputError: string | null
+  samplesError: string | null
+  // stream structure from the input decoder, empty or null without decodable inputs
+  firstVehicleTick: number | null
+  kinds: number[]
+  minSteer: number | null
   device: Device
 }
 
@@ -78,6 +93,7 @@ export type Detector = (ctx: FileContext, baseline: Baseline | null) => SignalRe
 
 export interface Summary {
   absoluteFired: SignalId[]
+  empiricalFired: SignalId[]
   relativeOutside: SignalId[]
   needsHumanReview: boolean
 }

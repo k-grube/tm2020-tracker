@@ -1,3 +1,4 @@
+import { pickGhost } from '../core/signals/context.ts'
 import { existsSync, readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import { computeBaseline } from '../core/baseline.ts'
@@ -43,7 +44,7 @@ export async function baselineCommand(
   for (const p of paths) {
     const bytes = readFileBytes(p)
     try {
-      const ghost = parseGbx(bytes).ghosts[0]
+      const ghost = pickGhost(parseGbx(bytes))
       if (!ghost) {
         continue
       }

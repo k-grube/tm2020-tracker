@@ -1,5 +1,6 @@
 import { trajectoryOverlap } from './trajectory-overlap.ts'
 import { checkpointSplitMatch } from './checkpoint-split-match.ts'
+import { splitCopy } from './split-copy.ts'
 import type { FileContext, FileReport, LoginGroup, MapGroup, Report } from './types.ts'
 
 function groupIndices(ctxs: FileContext[], key: (c: FileContext) => string): Map<string, number[]> {
@@ -19,7 +20,8 @@ function groupIndices(ctxs: FileContext[], key: (c: FileContext) => string): Map
   return out
 }
 
-// pairs by map for trajectory and splits, aggregates by login for wall time; groups need two files
+// pairs by map: trajectory for every pair, split match within one login, split copy across logins.
+// aggregates by login for wall time. groups need two files
 export function buildGroups(ctxs: FileContext[], reports: FileReport[]): Report['groups'] {
   const byMap: MapGroup[] = []
   for (const [mapUid, idx] of groupIndices(ctxs, (c) => c.ghost.mapUid)) {
@@ -35,6 +37,8 @@ export function buildGroups(ctxs: FileContext[], reports: FileReport[]): Report[
         signals.push({ ...trajectoryOverlap(a, b), pair })
         if (a.ghost.login && a.ghost.login === b.ghost.login) {
           signals.push({ ...checkpointSplitMatch(a, b), pair })
+        } else {
+          signals.push({ ...splitCopy(a, b), pair })
         }
       }
     }

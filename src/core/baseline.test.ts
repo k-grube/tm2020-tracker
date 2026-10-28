@@ -44,7 +44,12 @@ function reportWith(device: Device, wallDelta: number, name = 'f'): FileReport {
         references: [],
       },
     ],
-    summary: { absoluteFired: [], relativeOutside: [], needsHumanReview: false },
+    summary: {
+      absoluteFired: [],
+      empiricalFired: [],
+      relativeOutside: [],
+      needsHumanReview: false,
+    },
   }
 }
 

@@ -4,6 +4,14 @@ import { steerDevice } from './steer-device.ts'
 import { inputDensity } from './input-density.ts'
 import { steerSpikes } from './steer-spikes.ts'
 import { steerRepetition } from './steer-repetition.ts'
+import { inputStructure } from './input-structure.ts'
+import { buildContext } from './context.ts'
+import { parseGbx } from '../parse.ts'
+import { inflateSync } from 'node:zlib'
+import type { Inflate } from '../model.ts'
+import { loadCorpusFixture, loadFixture } from '../../test/fixtures.ts'
+
+const nodeInflate: Inflate = (c) => new Uint8Array(inflateSync(c))
 import { fakeBaseline, fakeCtx, steerEvents } from './test-util.ts'
 import type { InputEvent } from '../model.ts'
 
@@ -23,7 +31,7 @@ const ev = (
 describe('same_tick_toggle', () => {
   test('a press released on the next tick counts once but stays below the firing count', () => {
     const r = sameTickToggle(fakeCtx({ events: [ev(10, 'gas', 1), ev(11, 'gas', 0)] }), null)
-    expect(r.level).toBe('absolute')
+    expect(r.level).toBe('empirical')
     expect(r.value).toBe(1)
     expect(r.fired).toBe(false)
     expect(r.evidence.some((e) => e.includes('gas'))).toBe(true)
@@ -162,6 +170,9 @@ describe('steer_repetition', () => {
     const r = steerRepetition(fakeCtx({ device: 'pad', steer }), null)
     expect(r.value).toBe(80)
     expect(r.evidence.join(' ')).toContain('800 ms')
+    expect(r.level).toBe('empirical')
+    expect(r.fired).toBe(true)
+    expect(r.references).toEqual([])
   })
 
   test('pad series without a repeat reports 0', () => {
@@ -170,6 +181,7 @@ describe('steer_repetition', () => {
       null,
     )
     expect(r.value).toBe(0)
+    expect(r.fired).toBe(false)
   })
 
   test('a constant hold is not a repeat', () => {
@@ -193,18 +205,16 @@ describe('steer_spikes_per_sec, long series', () => {
 
 describe('degenerate baseline', () => {
   test('a reference with no spread never fires, the value and range still show', () => {
-    const block = [...Array(40).fill(10), ...Array(40).fill(20), ...Array(40).fill(30)]
-    const pattern = [...block, ...block]
     const ctx = fakeCtx({
       device: 'pad',
-      events: steerEvents(pattern),
-      steer: Int8Array.from(pattern),
+      events: steerEvents([10, 20, 30, 40, 50]),
+      ghost: { raceTimeMs: 1000 },
     })
-    const flat = fakeBaseline('steer_repetition', 'pad', { median: 0, q1: 0, q3: 0 })
-    const r = steerRepetition(ctx, flat)
+    const flat = fakeBaseline('input_density', 'pad', { median: 20, q1: 20, q3: 20 })
+    const r = inputDensity(ctx, flat)
     expect(r.value).toBeGreaterThan(0)
     expect(r.fired).toBe(false)
-    expect(r.references.at(-1)!.low).toBe(0)
+    expect(r.references.at(-1)!.low).toBe(20)
   })
 })
 
@@ -232,7 +242,9 @@ describe('flagged spans', () => {
   })
 
   test('steer_repetition marks both copies of the repeat', () => {
-    const block = [...Array(40).fill(10), ...Array(40).fill(20), ...Array(40).fill(30)]
+    const block = Array.from({ length: 24 }, (_, i) => (i + 1) * 5).flatMap((v) =>
+      Array<number>(5).fill(v),
+    )
     const pattern = [...block, ...Array(30).fill(0), ...block]
     const ctx = fakeCtx({
       device: 'pad',
@@ -244,5 +256,125 @@ describe('flagged spans', () => {
       { startTick: 0, endTick: 120, label: 'repeat 120 ticks' },
       { startTick: 150, endTick: 270, label: 'repeat 120 ticks' },
     ])
+  })
+})
+
+describe('race window', () => {
+  const flips = (n: number) => Array.from({ length: n }, (_, i) => (i % 2 ? 60 : -60))
+
+  test('idle ticks after the finish do not dilute steer spikes', () => {
+    const race = Int8Array.from(flips(500))
+    const padded = Int8Array.from([...flips(500), ...new Array<number>(5000).fill(0)])
+    const a = steerSpikes(
+      fakeCtx({ steer: race, device: 'pad', firstVehicleTick: 0, ghost: { raceTimeMs: 5000 } }),
+      null,
+    )
+    const b = steerSpikes(
+      fakeCtx({ steer: padded, device: 'pad', firstVehicleTick: 0, ghost: { raceTimeMs: 5000 } }),
+      null,
+    )
+    expect(a.value).toBeGreaterThan(50)
+    expect(b.value).toBe(a.value)
+  })
+
+  test('countdown ticks before the first vehicle tick are not a window', () => {
+    const steer = Int8Array.from([...new Array<number>(500).fill(0), ...flips(500)])
+    const inputs = [
+      { version: 12, u01: 0, startOffsetMs: -5000, ticks: 1000, data: new Uint8Array(0) },
+    ]
+    const r = steerSpikes(
+      fakeCtx({ steer, device: 'pad', firstVehicleTick: 500, ghost: { raceTimeMs: 5000, inputs } }),
+      null,
+    )
+    expect(r.evidence[0]).toContain('over 5 windows')
+  })
+
+  test('events after the finish do not count toward density', () => {
+    const during = steerEvents(Array.from({ length: 100 }, (_, i) => i - 50))
+    const after = steerEvents(Array.from({ length: 100 }, (_, i) => i - 50)).map((e) => ({
+      ...e,
+      tick: e.tick + 1000,
+      timeMs: e.timeMs + 10000,
+    }))
+    const r = inputDensity(
+      fakeCtx({ events: [...during, ...after], firstVehicleTick: 0, ghost: { raceTimeMs: 1000 } }),
+      null,
+    )
+    expect(r.value).toBe(100)
+  })
+})
+
+describe('input_structure', () => {
+  const clean = () =>
+    fakeCtx({
+      events: steerEvents([10, 20]),
+      kinds: [2, 15],
+      firstVehicleTick: 0,
+      minSteer: -127,
+    })
+
+  test('a stream shaped like every legit record does not fire', () => {
+    const r = inputStructure(clean(), null)
+    expect(r.level).toBe('empirical')
+    expect(r.applicable).toBe(true)
+    expect(r.fired).toBe(false)
+    expect(r.value).toBe(0)
+  })
+
+  test('two input entries fire', () => {
+    const base = clean()
+    const input = base.ghost.inputs[0]!
+    const r = inputStructure(
+      fakeCtx({ ...base, ghost: { ...base.ghost, inputs: [input, input] } }),
+      null,
+    )
+    expect(r.fired).toBe(true)
+    expect(r.evidence.join(' ')).toContain('2 input entries')
+  })
+
+  test('a vehicle state after the finish state fires', () => {
+    const r = inputStructure(fakeCtx({ ...clean(), kinds: [2, 15, 2] }), null)
+    expect(r.fired).toBe(true)
+    expect(r.evidence.join(' ')).toContain('2,15,2')
+  })
+
+  test('steer -128 fires', () => {
+    const r = inputStructure(fakeCtx({ ...clean(), minSteer: -128 }), null)
+    expect(r.fired).toBe(true)
+    expect(r.evidence.join(' ')).toContain('-128')
+  })
+
+  test('a late first vehicle tick fires', () => {
+    const r = inputStructure(fakeCtx({ ...clean(), firstVehicleTick: 50 }), null)
+    expect(r.fired).toBe(true)
+    expect(r.evidence.join(' ')).toContain('tick 50')
+  })
+
+  test('not applicable without inputs', () => {
+    expect(inputStructure(fakeCtx({ ghost: { inputs: [] } }), null).applicable).toBe(false)
+  })
+
+  test.each(['slidrz', 'tmio', 'localReplay', 'localPbReplay'] as const)(
+    'real file %s does not fire',
+    async (name) => {
+      const ctx = await buildContext(name, parseGbx(loadFixture(name)), nodeInflate)
+      expect(inputStructure(ctx, null).fired).toBe(false)
+    },
+  )
+
+  test('a finish word before and after the vehicle block is the shape of nine legit records', () => {
+    expect(inputStructure(fakeCtx({ ...clean(), kinds: [15, 2, 15] }), null).fired).toBe(false)
+    expect(inputStructure(fakeCtx({ ...clean(), kinds: [14, 2] }), null).fired).toBe(false)
+  })
+
+  test('an unknown kind fires', () => {
+    const r = inputStructure(fakeCtx({ ...clean(), kinds: [2, 7] }), null)
+    expect(r.fired).toBe(true)
+    expect(r.evidence.join(' ')).toContain('2,7')
+  })
+
+  test('propanoia does not fire on structure', async () => {
+    const ctx = await buildContext('p', parseGbx(loadCorpusFixture('propanoia')), nodeInflate)
+    expect(inputStructure(ctx, null).fired).toBe(false)
   })
 })

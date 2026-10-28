@@ -9,13 +9,13 @@ import { createTmxClient } from './tmx.ts'
 import { createTmioClient } from './tmio.ts'
 import { fetchCommand, type FetchFs } from './fetch.ts'
 import { analyzeCommand } from './analyze.ts'
-import { formatReport } from './format-report.ts'
+import { formatReport, formatSummary } from './format-report.ts'
 import type { Baseline } from '../core/signals/types.ts'
 
 const USAGE = `usage:
   dump <file> [--json] [--events N]
   fetch (--map <tmxMapId> [--count N] [--uploads] | --campaign <tmioCampaignId> [--count N] | --ghost <uuid> | --search <name>) --out <dir>
-  analyze <file|dir>... [--json] [--baseline <file>]
+  analyze <file|dir>... [--json | --summary] [--baseline <file>]
   baseline <dir> --out <file> [--ranks lo:hi]
 `
 
@@ -27,6 +27,7 @@ const nodeFs: FetchFs = {
     writeFileSync(path, data)
   },
   readText: (path) => (existsSync(path) ? readFileSync(path, 'utf8') : null),
+  exists: (path) => existsSync(path),
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -81,7 +82,11 @@ async function main(argv: string[]): Promise<number> {
           : null
       const report = await analyzeCommand(args.positionals, baseline)
       process.stdout.write(
-        args.flags.json ? JSON.stringify(report, null, 2) + '\n' : formatReport(report),
+        args.flags.json
+          ? JSON.stringify(report, null, 2) + '\n'
+          : args.flags.summary
+            ? formatSummary(report)
+            : formatReport(report),
       )
       const failed = report.files.filter(
         (f) => f.signals[0]?.applicable === false && f.login === '',

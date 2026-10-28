@@ -7,6 +7,7 @@ interface Route {
   status?: number
   json?: unknown
   bytes?: number[]
+  headers?: Record<string, string>
 }
 
 function stubFetch(routes: (url: string) => Route) {
@@ -17,7 +18,7 @@ function stubFetch(routes: (url: string) => Route) {
     const route = routes(url)
     const body =
       route.json !== undefined ? JSON.stringify(route.json) : new Uint8Array(route.bytes ?? [])
-    return new Response(body, { status: route.status ?? 200 })
+    return new Response(body, { status: route.status ?? 200, headers: route.headers })
   }) as typeof fetch
   return { fetchFn, calls }
 }
@@ -109,13 +110,27 @@ describe('createTmioClient', () => {
     const c = await client.campaign(1)
     expect(c.maps).toEqual([])
     expect(calls).toHaveLength(3)
-    expect(waits).toEqual([2000, 4000])
+    expect(waits).toEqual([5000, 15000])
     n = 0
     const always = stubFetch(() => ({ status: 429 }))
     await expect(createTmioClient(always.fetchFn, UA, async () => {}).campaign(1)).rejects.toThrow(
       /429/,
     )
-    expect(always.calls).toHaveLength(4)
+    expect(always.calls).toHaveLength(6)
+  })
+
+  test('a 429 with retry-after waits that many seconds', async () => {
+    let n = 0
+    const { fetchFn } = stubFetch(() => ({
+      status: n++ < 1 ? 429 : 200,
+      headers: { 'Retry-After': '20' },
+      json: { name: 'c', playlist: [] },
+    }))
+    const waits: number[] = []
+    await createTmioClient(fetchFn, UA, async (ms) => {
+      waits.push(ms)
+    }).campaign(1)
+    expect(waits).toEqual([20000])
   })
 
   test('non-200 rejects with status and url', async () => {
@@ -135,6 +150,7 @@ describe('fetchCommand --campaign', () => {
         const v = files.get(path)
         return typeof v === 'string' ? v : null
       },
+      exists: (path) => files.has(path),
     }
     return { fs, files }
   }
@@ -192,6 +208,53 @@ describe('fetchCommand --campaign', () => {
       mapUid: 'u1',
       recordTimeMs: 19988,
     })
+  })
+
+  test('a file already in the out dir is kept and indexed without a download', async () => {
+    const { fs, files } = memFs()
+    files.set('out/P1_(0019988)_fall-2026-01.Ghost.Gbx', new Uint8Array([9]))
+    let downloads = 0
+    const counting: TmioClient = {
+      ...tmio,
+      downloadGhost: async (...args) => {
+        downloads++
+        return tmio.downloadGhost(...args)
+      },
+    }
+    const lines = await fetchCommand(
+      { client: tmx, tmio: counting, out: 'out', campaign: 157584, count: 2, uploads: false },
+      fs,
+      async () => {},
+    )
+    expect(downloads).toBe(3)
+    expect(files.get('out/P1_(0019988)_fall-2026-01.Ghost.Gbx')).toEqual(new Uint8Array([9]))
+    expect(lines).toContain('P1_(0019988)_fall-2026-01.Ghost.Gbx kept')
+    const index = JSON.parse(files.get('out/index.json') as string)
+    expect(index['P1_(0019988)_fall-2026-01.Ghost.Gbx'].position).toBe(1)
+    expect(Object.keys(index)).toHaveLength(4)
+  })
+
+  test('the index is written after every file', async () => {
+    const { fs, files } = memFs()
+    let downloads = 0
+    const failing: TmioClient = {
+      ...tmio,
+      downloadGhost: async (...args) => {
+        if (++downloads === 3) {
+          throw new Error('trackmania.io 429')
+        }
+        return tmio.downloadGhost(...args)
+      },
+    }
+    await expect(
+      fetchCommand(
+        { client: tmx, tmio: failing, out: 'out', campaign: 157584, count: 2, uploads: false },
+        fs,
+        async () => {},
+      ),
+    ).rejects.toThrow(/429/)
+    const index = JSON.parse(files.get('out/index.json') as string)
+    expect(Object.keys(index)).toHaveLength(2)
   })
 
   test('campaign without a trackmania.io client rejects', async () => {

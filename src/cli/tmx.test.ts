@@ -129,6 +129,7 @@ describe('fetchCommand', () => {
         const v = files.get(path)
         return typeof v === 'string' ? v : null
       },
+      exists: (path) => files.has(path),
     }
     return { fs, files }
   }

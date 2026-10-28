@@ -8,8 +8,14 @@ import type {
   Summary,
 } from './types.ts'
 
+import { decodeFailure } from './decode-failure.ts'
 import { wallTimeDelta, wallTimeRatio } from './wall-time.ts'
 import { ticksVsRaceTime } from './ticks-vs-racetime.ts'
+import { validationConsistency } from './validation-consistency.ts'
+import { checkpointConsistency } from './checkpoint-consistency.ts'
+import { sampleInputMatch } from './sample-input-match.ts'
+import { positionContinuity } from './position-continuity.ts'
+import { inputStructure } from './input-structure.ts'
 import { metadata } from './metadata.ts'
 import { sameTickToggle } from './same-tick-toggle.ts'
 import { steerDevice } from './steer-device.ts'
@@ -20,9 +26,15 @@ import { notApplicable } from './relative.ts'
 import { buildGroups } from './groups.ts'
 
 export const DETECTORS: Detector[] = [
+  decodeFailure,
   wallTimeRatio,
   wallTimeDelta,
   ticksVsRaceTime,
+  validationConsistency,
+  checkpointConsistency,
+  sampleInputMatch,
+  positionContinuity,
+  inputStructure,
   sameTickToggle,
   steerSpikes,
   inputDensity,
@@ -32,23 +44,29 @@ export const DETECTORS: Detector[] = [
 ]
 
 export function summarize(signals: SignalResult[]): Summary {
-  const absoluteFired = signals.filter((s) => s.level === 'absolute' && s.fired).map((s) => s.id)
-  const relativeOutside = signals.filter((s) => s.level === 'relative' && s.fired).map((s) => s.id)
+  const fired = (level: SignalResult['level']) =>
+    signals.filter((s) => s.level === level && s.fired).map((s) => s.id)
+  const absoluteFired = fired('absolute')
+  const empiricalFired = fired('empirical')
+  const relativeOutside = fired('relative')
   return {
     absoluteFired,
+    empiricalFired,
     relativeOutside,
-    needsHumanReview: absoluteFired.length > 0 || relativeOutside.length >= 2,
+    needsHumanReview:
+      absoluteFired.length > 0 || empiricalFired.length > 0 || relativeOutside.length >= 2,
   }
 }
 
 // multi-file signals only exist in groups, single-file reports list them as not applicable
 const MULTI_FILE_PLACEHOLDERS: SignalResult[] = [
-  notApplicable('trajectory_overlap', 'relative', 'needs two files on the same map'),
+  notApplicable('trajectory_overlap', 'empirical', 'needs two files on the same map'),
   notApplicable('checkpoint_split_match', 'info', 'needs two files on the same map from one login'),
+  notApplicable('split_copy', 'empirical', 'needs two files on the same map from two logins'),
 ]
 
 // a file that could not be parsed or analyzed, one metadata line carries the message
-export function errorReport(name: string, message: string): FileReport {
+export function errorReport(name: string, message: string, needsHumanReview: boolean): FileReport {
   return {
     name,
     login: '',
@@ -68,7 +86,12 @@ export function errorReport(name: string, message: string): FileReport {
         references: [],
       },
     ],
-    summary: { absoluteFired: [], relativeOutside: [], needsHumanReview: false },
+    summary: {
+      absoluteFired: [],
+      empiricalFired: [],
+      relativeOutside: [],
+      needsHumanReview,
+    },
   }
 }
 
@@ -98,7 +121,7 @@ export function analyzeFiles(ctxs: FileContext[], baseline: Baseline | null): Re
       okCtxs.push(ctx)
       okReports.push(report)
     } catch (e) {
-      files.push(errorReport(ctx.name, e instanceof Error ? e.message : String(e)))
+      files.push(errorReport(ctx.name, e instanceof Error ? e.message : String(e), true))
     }
   }
   return {

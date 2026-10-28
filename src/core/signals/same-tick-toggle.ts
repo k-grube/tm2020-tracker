@@ -20,7 +20,7 @@ function keyAndState(e: InputEvent): { key: string; pressed: boolean } | null {
 // a key pressed and released within one tick, scripted input playback does this, a hand does not
 export const sameTickToggle: Detector = (ctx) => {
   if (ctx.events.length === 0) {
-    return notApplicable('same_tick_toggle', 'absolute', 'no inputs')
+    return notApplicable('same_tick_toggle', 'empirical', 'no inputs')
   }
   const pressTick = new Map<string, number>()
   let count = 0
@@ -49,7 +49,7 @@ export const sameTickToggle: Detector = (ctx) => {
   }
   return {
     id: 'same_tick_toggle',
-    level: 'absolute',
+    level: 'empirical',
     applicable: true,
     fired: count >= SAME_TICK_MIN_COUNT,
     value: count,

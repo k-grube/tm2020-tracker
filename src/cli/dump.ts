@@ -1,3 +1,4 @@
+import { pickGhost } from '../core/signals/context.ts'
 import { createHash } from 'node:crypto'
 import { parseGbx } from '../core/parse.ts'
 import { decodeInputs } from '../core/inputs/decode.ts'
@@ -56,7 +57,7 @@ function dumpGhost(g: Ghost): DumpGhost {
 
 export async function dumpFile(bytes: Uint8Array, opts: { events: number }): Promise<DumpResult> {
   const parsed = parseGbx(bytes)
-  const first = parsed.ghosts[0]
+  const first = pickGhost(parsed)
   const inputs = (first?.inputs ?? []).map((i) => {
     const events = decodeInputs(i)
     return {
@@ -68,7 +69,7 @@ export async function dumpFile(bytes: Uint8Array, opts: { events: number }): Pro
   })
   let samples: DumpResult['samples'] = null
   if (first?.recordData) {
-    const s = await decodeSamples(first.recordData, inflateNode)
+    const s = await decodeSamples(first.recordData, inflateNode, first.raceTimeMs)
     samples = { count: s.length, firstTimeMs: s[0]?.timeMs ?? 0, lastTimeMs: s.at(-1)?.timeMs ?? 0 }
   }
   return {
