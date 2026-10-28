@@ -12,14 +12,16 @@ export const inputDensity: Detector = (ctx, baseline) => {
   }
   const raceSec = raceTimeMs / 1000
   const steer = ctx.events.filter((e) => e.kind === 'steer').length
-  const other = ctx.events.filter((e) => e.kind !== 'steer' && e.kind !== 'mouse').length
+  const mouse = ctx.events.filter((e) => e.kind === 'mouse').length
+  const other = ctx.events.length - steer - mouse
+  // cursor movement is recorded in the stream but drives nothing
   return relativeResult(
     'input_density',
-    ctx.events.length / raceSec,
+    (steer + other) / raceSec,
     'events/s',
     [
-      `steer ${(steer / raceSec).toFixed(2)} / s, other ${(other / raceSec).toFixed(2)} / s`,
-      `${ctx.events.length} events over ${raceSec.toFixed(2)} s`,
+      `steer ${(steer / raceSec).toFixed(2)} / s, other ${(other / raceSec).toFixed(2)} / s, mouse ${(mouse / raceSec).toFixed(2)} / s`,
+      `${steer + other} events over ${raceSec.toFixed(2)} s`,
     ],
     baseline,
     ctx.device,

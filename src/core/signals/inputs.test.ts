@@ -82,6 +82,19 @@ describe('input_density', () => {
     expect(r.fired).toBe(false)
   })
 
+  test('mouse movement is not an input, it is reported on its own line', () => {
+    const events = [
+      ev(0, 'steer', 10),
+      ev(1, 'mouse', 5, 5),
+      ev(2, 'mouse', 6, 5),
+      ev(3, 'mouse', 7, 5),
+      ev(4, 'gas', 1),
+    ]
+    const r = inputDensity(fakeCtx({ events, ghost: { raceTimeMs: 1000 } }), null)
+    expect(r.value).toBe(2)
+    expect(r.evidence.join(' ')).toMatch(/mouse 3(\.0+)? \/ s/)
+  })
+
   test('fires outside a baseline fence', () => {
     const events = [ev(0, 'steer', 10)]
     const baseline = fakeBaseline('input_density', 'pad', { median: 20, q1: 18, q3: 22 })
