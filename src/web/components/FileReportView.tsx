@@ -8,6 +8,7 @@ import { CheckpointTable } from './CheckpointTable.tsx'
 
 export function FileReportView({ report, viz }: { report: FileReport; viz: FileViz | null }) {
   const { summary } = report
+  const spans = report.signals.filter((s) => s.fired).flatMap((s) => s.spans ?? [])
   return (
     <section className="mt-10">
       <h2 className="text-lg font-semibold break-all">{report.name}</h2>
@@ -29,7 +30,7 @@ export function FileReportView({ report, viz }: { report: FileReport; viz: FileV
           <SignalCard key={s.id} signal={s} />
         ))}
       </div>
-      {viz?.steer && viz.steer.length > 0 && <SteerTrace steer={viz.steer} />}
+      {viz?.steer && viz.steer.length > 0 && <SteerTrace steer={viz.steer} spans={spans} />}
       {viz && <InputTimeline events={viz.events} ticks={viz.ticks} />}
       {viz && <CheckpointTable checkpoints={viz.checkpoints} />}
     </section>

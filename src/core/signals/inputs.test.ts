@@ -194,3 +194,42 @@ describe('degenerate baseline', () => {
     expect(r.references.at(-1)!.low).toBe(0)
   })
 })
+
+describe('flagged spans', () => {
+  test('same_tick_toggle lists each toggle as a span in ticks', () => {
+    const events = [
+      ev(10, 'gas', 1),
+      ev(11, 'gas', 0),
+      ev(30, 'actionSlot', 2, 1),
+      ev(30, 'actionSlot', 2, 0),
+    ]
+    const r = sameTickToggle(fakeCtx({ events }), null)
+    expect(r.spans).toEqual([
+      { startTick: 10, endTick: 12, label: 'gas toggle' },
+      { startTick: 30, endTick: 31, label: 'actionSlot 2 toggle' },
+    ])
+  })
+
+  test('steer_spikes_per_sec marks windows at or above the 2021 average of max', () => {
+    // 20 spikes in the first second, none in the second
+    const first = Array.from({ length: 100 }, (_, i) => (i % 2 === 0 ? 50 : -50))
+    const steer = Int8Array.from([...first, ...Array(100).fill(0)])
+    const r = steerSpikes(fakeCtx({ steer, device: 'pad' }), null)
+    expect(r.spans).toEqual([{ startTick: 0, endTick: 100, label: '98 spikes/s' }])
+  })
+
+  test('steer_repetition marks both copies of the repeat', () => {
+    const block = [...Array(40).fill(10), ...Array(40).fill(20), ...Array(40).fill(30)]
+    const pattern = [...block, ...Array(30).fill(0), ...block]
+    const ctx = fakeCtx({
+      device: 'pad',
+      events: steerEvents(pattern),
+      steer: Int8Array.from(pattern),
+    })
+    const r = steerRepetition(ctx, null)
+    expect(r.spans).toEqual([
+      { startTick: 0, endTick: 120, label: 'repeat 120 ticks' },
+      { startTick: 150, endTick: 270, label: 'repeat 120 ticks' },
+    ])
+  })
+})

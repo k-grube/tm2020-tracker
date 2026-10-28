@@ -60,6 +60,10 @@
     fill: var(--ink-2);
   }
 
+  .chart .flag {
+    fill: #d03b3b;
+  }
+
   .lane-1 {
     fill: var(--series-1);
   }

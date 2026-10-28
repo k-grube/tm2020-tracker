@@ -94,7 +94,7 @@ export const steerRepetition: Detector = (ctx, baseline) => {
         `${best.length} ticks (${best.length * TICK_MS} ms) repeated at ${best.first * TICK_MS} ms and ${best.second * TICK_MS} ms, ${best.distinct} distinct values`,
       ]
     : [`no exact repeat of ${REPEAT_MIN_LEN_TICKS} ticks or more`]
-  return relativeResult(
+  const result = relativeResult(
     'steer_repetition',
     best?.length ?? 0,
     'ticks',
@@ -102,4 +102,15 @@ export const steerRepetition: Detector = (ctx, baseline) => {
     baseline,
     ctx.device,
   )
+  if (!best) {
+    return result
+  }
+  const label = `repeat ${best.length} ticks`
+  return {
+    ...result,
+    spans: [
+      { startTick: best.first, endTick: best.first + best.length, label },
+      { startTick: best.second, endTick: best.second + best.length, label },
+    ],
+  }
 }

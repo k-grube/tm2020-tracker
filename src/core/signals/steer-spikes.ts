@@ -1,6 +1,6 @@
 import { REF_2021, SPIKE_WINDOW_MS, STEER_SPIKE_MIN_DELTA, TICK_MS } from './constants.ts'
 import { notApplicable, relativeResult } from './relative.ts'
-import type { Detector, Reference } from './types.ts'
+import type { Detector, Reference, Span } from './types.ts'
 
 const REFERENCES: Reference[] = [
   {
@@ -37,6 +37,16 @@ export const steerSpikes: Detector = (ctx, baseline) => {
     }
     prevSign = sign
   }
+  const spans: Span[] = []
+  windows.forEach((count, w) => {
+    if (count >= REF_2021.avgMaxSpikesPerSec) {
+      spans.push({
+        startTick: w * windowTicks,
+        endTick: Math.min((w + 1) * windowTicks, steer.length),
+        label: `${count} spikes/s`,
+      })
+    }
+  })
   const total = windows.reduce((a, b) => a + b, 0)
   const avg = total / windows.length
   let max = 0
@@ -45,13 +55,16 @@ export const steerSpikes: Detector = (ctx, baseline) => {
       max = w
     }
   }
-  return relativeResult(
-    'steer_spikes_per_sec',
-    avg,
-    'spikes/s',
-    [`avg ${avg.toFixed(2)} spikes/s over ${windows.length} windows, max window: ${max}`],
-    baseline,
-    ctx.device,
-    REFERENCES,
-  )
+  return {
+    ...relativeResult(
+      'steer_spikes_per_sec',
+      avg,
+      'spikes/s',
+      [`avg ${avg.toFixed(2)} spikes/s over ${windows.length} windows, max window: ${max}`],
+      baseline,
+      ctx.device,
+      REFERENCES,
+    ),
+    ...(spans.length > 0 ? { spans } : {}),
+  }
 }

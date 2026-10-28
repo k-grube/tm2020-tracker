@@ -35,5 +35,16 @@ export const ticksVsRaceTime: Detector = (ctx) => {
     unit: 'ms',
     evidence,
     references: [],
+    ...(fired
+      ? {
+          spans: [
+            {
+              startTick: ticks,
+              endTick: Math.round((raceTimeMs - offset) / TICK_MS),
+              label: 'no inputs',
+            },
+          ],
+        }
+      : {}),
   }
 }

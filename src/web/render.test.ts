@@ -41,7 +41,7 @@ describe('FileReportView', () => {
         expect(html).toContain(esc(fmtValue(s)))
         expect(html).toContain(esc(s.evidence[0]!))
       }
-      expect(html).toMatch(/<figcaption[^>]*>steer<\/figcaption>/)
+      expect(html).toContain('steer 0.00 s to ')
       expect(html).toMatch(/<caption[^>]*>checkpoints<\/caption>/)
       expect((html.match(/<path class="series" d="M/g) ?? []).length).toBe(1)
     },
@@ -57,5 +57,22 @@ describe('FileReportView', () => {
     expect(html).toContain('across files')
     expect(html).toContain('trajectory_overlap: localReplay vs localPbReplay')
     expect(html).toContain('login KrE23CqvT8-wmr21pF5rqQ')
+  })
+})
+
+describe('SteerTrace spans', () => {
+  test('flagged spans render as bars at the top with their label', async () => {
+    const { SteerTrace } = await import('./components/SteerTrace.tsx')
+    const html = renderToStaticMarkup(
+      createElement(SteerTrace, {
+        steer: new Int8Array(1000),
+        spans: [
+          { startTick: 100, endTick: 200, label: 'gas toggle' },
+          { startTick: 500, endTick: 600, label: 'repeat 100 ticks' },
+        ],
+      }),
+    )
+    expect((html.match(/class="flag"/g) ?? []).length).toBe(2)
+    expect(html).toContain('<title>gas toggle</title>')
   })
 })

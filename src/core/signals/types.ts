@@ -25,6 +25,13 @@ export interface Reference {
   high: number | null
 }
 
+// a stretch of the run a signal points at, in input ticks
+export interface Span {
+  startTick: number
+  endTick: number
+  label: string
+}
+
 export interface SignalResult {
   id: SignalId
   level: SignalLevel
@@ -34,6 +41,7 @@ export interface SignalResult {
   unit: string
   evidence: string[]
   references: Reference[]
+  spans?: Span[]
 }
 
 export interface FileContext {

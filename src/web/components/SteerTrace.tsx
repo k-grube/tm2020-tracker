@@ -1,44 +1,79 @@
-import { useState, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import type { Span } from '../../core/signals/types.ts'
+import { steerPath, zoomView, type View } from './steer-view.ts'
 
-const STEP_TICKS = 10
+export { steerPath } from './steer-view.ts'
+
 const WIDTH = 800
 const HEIGHT = 120
+const FLAG_H = 4
+const ZOOM_IN = 0.5
+const ZOOM_OUT = 2
+const WHEEL_STEP = 1.25
 
-// one point per 10 ticks, value -127..127 mapped to bottom..top
-export function steerPath(steer: Int8Array, width: number, height: number): string {
-  if (steer.length === 0) {
-    return ''
-  }
-  const parts: string[] = []
-  const span = Math.max(steer.length - 1, 1)
-  for (let i = 0; i < steer.length; i += STEP_TICKS) {
-    const x = (i / span) * width
-    const y = height / 2 - (steer[i]! / 127) * (height / 2)
-    parts.push(`${parts.length === 0 ? 'M' : 'L'}${fmt(x)},${fmt(y)}`)
-  }
-  return parts.join(' ')
-}
+const BTN =
+  'rounded border border-zinc-300 px-2 text-xs text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800'
 
-function fmt(n: number): string {
-  return Number.isInteger(n) ? String(n) : n.toFixed(1)
-}
-
-export function SteerTrace({ steer }: { steer: Int8Array }) {
+export function SteerTrace({ steer, spans = [] }: { steer: Int8Array; spans?: Span[] }) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [view, setView] = useState<View>([0, steer.length])
   const [hover, setHover] = useState<number | null>(null)
-  const span = Math.max(steer.length - 1, 1)
-  const d = steerPath(steer, WIDTH, HEIGHT)
-  const hx = hover === null ? 0 : (hover / span) * WIDTH
+  const [start, end] = view
+  const span = Math.max(end - start, 1)
+  const toX = (tick: number) => ((tick - start) / span) * WIDTH
+  const d = steerPath(steer, WIDTH, HEIGHT, view)
+
+  // react registers wheel as passive, the page would scroll along with the zoom
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg) {
+      return
+    }
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const rect = svg.getBoundingClientRect()
+      const frac = (e.clientX - rect.left) / rect.width
+      setView((v) => zoomView(v, e.deltaY < 0 ? 1 / WHEEL_STEP : WHEEL_STEP, frac, steer.length))
+    }
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    return () => svg.removeEventListener('wheel', onWheel)
+  }, [steer.length])
 
   const onMove = (e: PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
-    const tick = Math.round(((e.clientX - rect.left) / rect.width) * span)
+    const tick = Math.round(start + ((e.clientX - rect.left) / rect.width) * span)
     setHover(Math.min(Math.max(tick, 0), steer.length - 1))
   }
 
+  const hx = hover === null ? 0 : toX(hover)
+  const visible = spans.filter((s) => s.endTick > start && s.startTick < end)
+
   return (
     <figure className="chart mt-5">
-      <figcaption className="mb-1 text-sm text-zinc-500">steer</figcaption>
+      <figcaption className="mb-1 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
+        <span>
+          steer {(start / 100).toFixed(2)} s to {(end / 100).toFixed(2)} s
+        </span>
+        <button
+          type="button"
+          className={BTN}
+          onClick={() => setView((v) => zoomView(v, ZOOM_IN, 0.5, steer.length))}
+        >
+          +
+        </button>
+        <button
+          type="button"
+          className={BTN}
+          onClick={() => setView((v) => zoomView(v, ZOOM_OUT, 0.5, steer.length))}
+        >
+          -
+        </button>
+        <button type="button" className={BTN} onClick={() => setView([0, steer.length])}>
+          reset
+        </button>
+      </figcaption>
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="h-auto w-full touch-none rounded-md bg-zinc-50 dark:bg-zinc-900"
         onPointerMove={onMove}
@@ -50,12 +85,21 @@ export function SteerTrace({ steer }: { steer: Int8Array }) {
         <line className="gridline" x1={0} x2={WIDTH} y1={0.5} y2={0.5} />
         <line className="gridline" x1={0} x2={WIDTH} y1={HEIGHT - 0.5} y2={HEIGHT - 0.5} />
         <path className="series" d={d} />
+        {visible.map((s, i) => {
+          const x = toX(Math.max(s.startTick, start))
+          const w = Math.max(toX(Math.min(s.endTick, end)) - x, 2)
+          return (
+            <rect key={i} className="flag" x={x} y={0} width={w} height={FLAG_H}>
+              <title>{s.label}</title>
+            </rect>
+          )
+        })}
         {hover !== null && (
           <g className="crosshair">
             <line x1={hx} x2={hx} y1={0} y2={HEIGHT} />
             <text
               x={hx < WIDTH / 2 ? hx + 6 : hx - 6}
-              y={14}
+              y={16}
               textAnchor={hx < WIDTH / 2 ? 'start' : 'end'}
             >
               {(hover / 100).toFixed(2)} s, steer {steer[hover]}

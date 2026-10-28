@@ -211,3 +211,32 @@ describe('wall_time_delta, one-sided fence', () => {
     expect(r.fired).toBe(false)
   })
 })
+
+describe('ticks_vs_racetime span', () => {
+  test('a shortfall marks the ticks without inputs', () => {
+    const r = ticksVsRaceTime(
+      fakeCtx({
+        decodedTicks: 1363,
+        ghost: {
+          raceTimeMs: 24794,
+          inputs: [{ version: 12, u01: 0, startOffsetMs: 0, ticks: 2480, data: new Uint8Array(0) }],
+        },
+      }),
+      null,
+    )
+    expect(r.spans).toEqual([{ startTick: 1363, endTick: 2479, label: 'no inputs' }])
+  })
+
+  test('no span when inputs cover the finish', () => {
+    const r = ticksVsRaceTime(
+      fakeCtx({
+        ghost: {
+          raceTimeMs: 24794,
+          inputs: [{ version: 12, u01: 0, startOffsetMs: 0, ticks: 2480, data: new Uint8Array(0) }],
+        },
+      }),
+      null,
+    )
+    expect(r.spans).toBeUndefined()
+  })
+})
