@@ -1,12 +1,12 @@
 # tm2020-tracker
 
-Screens Trackmania 2020 ghost and replay files for input and timing patterns. Own Gbx parser, no runtime dependencies in the core, one codebase for the CLI and the page.
+Screens Trackmania 2020 ghost and replay files for signs of a doctored run: the wall clock against the race time, the input stream against the recorded car state, the splits against the record data. The parser, the checks and the CLI are in this repo, the page runs the same code in the browser.
 
 Page: https://k-grube.github.io/tm2020-tracker/
 
 ## Page
 
-Drop `.Ghost.Gbx` or `.Replay.Gbx` files. A pasted record uuid, TMX replay id or download url turns into a download link, the page itself never fetches anything. Files stay in a tab strip across reloads. Dot per file: green nothing fired, amber a check fired, red needs review, gray did not parse. The whole set is analyzed together, so the cross-file checks see every loaded file. The glossary under the report explains each check.
+Drop `.Ghost.Gbx` or `.Replay.Gbx` files. A pasted record uuid, TMX replay id or download url becomes a download link, the page downloads nothing. Files stay in a tab strip across reloads. Dot per file: green nothing fired, amber a check fired, red needs review, gray did not parse. Every loaded file is analyzed as one set, the two-file checks run across all of them. The glossary under the report describes each check.
 
 ## CLI
 
@@ -40,10 +40,10 @@ node src/cli/main.ts analyze fixtures/wr --baseline public/baseline.json
 | `wall_time_ratio`        | info                 | the same as a ratio, per login across files                                                                                                                                                                               |
 | `ticks_vs_racetime`      | absolute             | input ticks x 10 ms + start offset against race time, tolerance 2 ticks. Fires when the inputs end before the finish                                                                                                      |
 | `validation_consistency` | empirical            | the two validation copies agree, the two recording windows agree, end stamp set and after start, wall time at least the race time, start after the build date, seed 0 only on builds before 2022                          |
-| `build_checksum`         | empirical            | executable checksum against the one the baseline saw with that build string, one per build across 47 builds. An unseen build is listed, not fired                                                                         |
+| `build_checksum`         | empirical            | executable checksum against the one the baseline saw with that build string, one per build across 47 builds. An unseen build is listed and does not fire                                                                  |
 | `login_account`          | absolute             | ghost login (base64url of the account uuid) against the account the leaderboard credits. Needs the record's leaderboard entry                                                                                             |
-| `checkpoint_consistency` | absolute             | the three stored split lists agree, strictly increase from after the start, end on the race time, and the spawn landmark is none of the split landmarks                                                                   |
-| `checkpoint_records`     | empirical            | arena player checkpoint records in the record data against the splits, every split but the finish has one at its exact ms on version 11 record data. Lists the split without one                                          |
+| `checkpoint_consistency` | absolute             | the three stored split lists agree, every split is after the start and after the previous one, the last equals the race time, the spawn landmark is none of the split landmarks                                           |
+| `checkpoint_records`     | empirical            | every split but the finish has a checkpoint record in the record data at its exact ms, version 11 record data only. Lists the splits without one                                                                          |
 | `sample_input_match`     | empirical            | steer, gas and brake in each 50 ms sample against the input stream at that tick or the one before, action key caps count as a match. Fires above 10% mismatch, steer rule for pad only                                    |
 | `position_continuity`    | empirical            | distance between consecutive samples over speed x gap + 5 cm. Beyond 1.5x is a teleport, fires when teleports exceed the declared respawns. Last 200 ms and the second after a teleport skipped                           |
 | `path_speed_ratio`       | empirical            | distance the positions cover over the distance the recorded speed allows, whole race, sim time coefficient applied. Fires above 1.05, the declared respawns exempt the largest jumps                                      |
@@ -59,7 +59,7 @@ node src/cli/main.ts analyze fixtures/wr --baseline public/baseline.json
 | `checkpoint_split_match` | info, two files      | identical split times across files from one login                                                                                                                                                                         |
 | `metadata`               | info                 | login, nickname, zone, club tag, map, model, samples, ghosts in a replay, build, race settings, validation seed, recording id, leaderboard account and stamp, decode warnings                                             |
 
-`absolute`: the file contradicts itself. `empirical`: a fixed rule, not seen in 1890 legit records. `relative`: outside the Tukey fence (1.5 IQR) of the reference for the file's device, silent without a reference. `info`: never fires. `needs human review`: an absolute or empirical signal fired, or two or more relative ones.
+`absolute`: the file contradicts itself. `empirical`: a fixed rule, never seen in 1891 legit records. `relative`: outside the Tukey fence (1.5 IQR) of the reference for the file's device, silent without a reference. `info`: never fires. `needs human review`: an absolute or empirical signal fired, or two or more relative ones.
 
 `public/baseline.json`: 1417 records at ranks 10 to 50 from the Summer 2020 and Fall 2026 campaigns and 7 popular maps, built with `baseline`.
 
@@ -67,8 +67,8 @@ Fired signals carry the ticks they point at, drawn as red bars on the steer trac
 
 ## Caveats
 
-- one removed record has been through this: Fall 2026 map 01, 19.869 by DeleteCheatWRs, live for twenty minutes on 2026-10-28. `path_speed_ratio` 3.14 (positions cover 1814 m, speed accounts for 578 m), `position_continuity` 13 teleports with no respawn declared, `wall_time_delta` +194 s, every other check quiet. `fixtures/DeleteCheatWRs_(0019869)_fall-2026-01.Ghost.Gbx`
-- injected inputs, or slow motion with patched timestamps, leave a self-consistent file. Nothing in it separates that from a human run
+- 93 removed records have been through this, pulled by record id. 40 fire an absolute or empirical check, 19 fire the wall clock only, 33 fire nothing. Five are kept as fixtures: DeleteCheatWRs (teleports, `path_speed_ratio` 3.14), Kopatych.xDD (transformation map, wall clock 1.4x), Blackpro921OG (car parked, finish fired), tommac1n0 (checkpoint before the start), PixelDani (1.5 s finish after 16 m)
+- injected inputs, or slow motion with patched timestamps, leave a self-consistent file that passes every check
 - the 2021 references come from TMNF/TMUF replays
 - action slots 2 and 4 have an extra bit the decoder ignores
 
@@ -81,7 +81,7 @@ npm run lint
 npm run dev
 ```
 
-Fixtures live in `fixtures/` with `*.dump.json` goldens, `fetch` output in `fixtures/*/` is git-ignored. `.github/workflows/pages.yml` deploys `main` to Pages.
+`src/core` has no runtime dependencies and no platform imports, the CLI and the page wrap it. Fixtures live in `fixtures/` with `*.dump.json` goldens, `fetch` output in `fixtures/*/` is git-ignored. `.github/workflows/pages.yml` deploys `main` to Pages.
 
 ## Prior art
 
