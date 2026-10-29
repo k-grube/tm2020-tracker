@@ -7,3 +7,4 @@ fixtures/*/
 .superpowers/
 .idea/
 docs/superpowers/
+docs/*.md

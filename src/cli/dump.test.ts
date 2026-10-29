@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { dumpFile } from './dump.ts'
+import { dumpFile, formatDump } from './dump.ts'
 import { FIXTURES, fixturePath, loadFixture, type FixtureName } from '../test/fixtures.ts'
 
 describe('dumpFile', () => {
@@ -14,6 +14,22 @@ describe('dumpFile', () => {
     expect(d.samples!.count).toBeGreaterThan(200)
     expect(d.unknownChunks.every((id) => /^0x[0-9a-f]{8}$/.test(id))).toBe(true)
     expect(d.ghosts[0]!.inputs[0]!.data.sha256).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  test('slidrz dump carries the state version, the first sample state, events and checkpoint records', async () => {
+    const d = await dumpFile(loadFixture('slidrz'), { events: 5 })
+    expect(d.samples!.stateVersion).toBe(33)
+    expect(d.samples!.first.state!.gear).not.toBeNull()
+    expect(d.events!.count).toBeGreaterThan(5)
+    expect(d.events!.firstEvents).toHaveLength(5)
+    expect(d.events!.byName['TriggeredWaypoint']).toBe(5)
+    expect(d.checkpointRecords.map((c) => c.timeMs)).toEqual(
+      d.ghosts[0]!.checkpoints.map((c) => c.timeMs),
+    )
+    const text = formatDump(d)
+    expect(text).toContain('events: ')
+    expect(text).toContain('TriggeredWaypoint')
+    expect(text).toContain('checkpoint records: ')
   })
 
   test('cli dump --json exits 0 and prints JSON', () => {

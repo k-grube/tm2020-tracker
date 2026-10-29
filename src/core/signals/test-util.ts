@@ -17,6 +17,11 @@ export function fakeGhost(over: Partial<Ghost> = {}): Ghost {
     ghostUid: `ghost-uid-${nextGhostUid++}`,
     raceTimeMs: 25000,
     respawns: 0,
+    stuntScore: 0,
+    gameRules: null,
+    spawnLandmark: null,
+    scope: null,
+    entityIndices: [],
     checkpoints: [{ timeMs: 25000, stuntsScore: null }],
     checkpoints01b: null,
     checkpoints02b: null,
@@ -91,5 +96,6 @@ export function fakeSamples(positions: [number, number, number][], stepMs = 10):
     steer: 0,
     gas: true,
     brake: false,
+    state: null,
   }))
 }

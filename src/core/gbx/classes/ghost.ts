@@ -2,7 +2,8 @@ import { readNodeRef, type ChunkReader, type ClassDef, type ReadContext } from '
 import { readId, readIdent, readPackDesc } from '../ids.ts'
 import type { ByteReader } from '../../io/byte-reader.ts'
 import { ParseError } from '../../io/errors.ts'
-import type { EntRecordData, Ghost } from '../../model.ts'
+import type { EntRecordData, Ghost, Validation } from '../../model.ts'
+import type { IdState } from '../ids.ts'
 
 export const GHOST_CLASS = 0x03092000
 
@@ -19,6 +20,11 @@ function createGhost(): Ghost {
     ghostUid: '',
     raceTimeMs: null,
     respawns: null,
+    stuntScore: null,
+    gameRules: null,
+    spawnLandmark: null,
+    scope: null,
+    entityIndices: [],
     checkpoints: [],
     checkpoints01b: null,
     checkpoints02b: null,
@@ -84,7 +90,7 @@ function read000(ctx: ReadContext, g: Ghost): void {
     g.recordData = readNodeRef<EntRecordData>(ctx)
     const n = r.u32()
     for (let i = 0; i < n; i++) {
-      r.i32()
+      g.entityIndices.push(r.i32())
     }
   }
   if (version >= 6) {
@@ -105,18 +111,69 @@ function read00b(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
   }
 }
 
-// u32 version, u16 n, u16, u16, i32 total, n x i32 deltas, i32 -1
+// forward deltas from absolute split times
+function toDeltas(times: number[]): number[] {
+  return times.map((t, i) => t - (times[i - 1] ?? 0))
+}
+
+// v2: u16 count, u16 stunt, u16 respawns (0xFFFF unset), u32 race time, forward deltas, i32
+// v1: u32 race time, u16 stunt, u16 respawns, u16 count, deltas back from the race time, i32
+// v0: u32 race time, u32 stunt, u32 respawns, u32 count, absolute times
 function read01b(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
-  p!.u32()
-  const n = p!.u16()
-  p!.u16()
-  p!.u16()
-  const totalMs = p!.i32()
-  const deltasMs: number[] = []
-  for (let i = 0; i < n; i++) {
-    deltasMs.push(p!.i32())
+  const version = p!.u32()
+  if (version >= 2) {
+    const n = p!.u16()
+    const stuntScore = p!.u16()
+    const raw = p!.u16()
+    const totalMs = p!.i32()
+    const deltasMs: number[] = []
+    for (let i = 0; i < n; i++) {
+      deltasMs.push(p!.i32())
+    }
+    g.checkpoints01b = { totalMs, stuntScore, respawns: raw === 0xffff ? -1 : raw, deltasMs }
+    return
   }
-  g.checkpoints01b = { totalMs, deltasMs }
+  if (version === 1) {
+    const totalMs = p!.i32()
+    const stuntScore = p!.u16()
+    const respawns = p!.u16()
+    const n = p!.u16()
+    const times: number[] = []
+    for (let i = 0; i < n; i++) {
+      times.push(totalMs - p!.i32())
+    }
+    g.checkpoints01b = { totalMs, stuntScore, respawns, deltasMs: toDeltas(times) }
+    return
+  }
+  const totalMs = p!.i32()
+  const stuntScore = p!.i32()
+  const respawns = p!.i32()
+  const n = p!.u32()
+  const times: number[] = []
+  for (let i = 0; i < n; i++) {
+    times.push(p!.i32())
+  }
+  g.checkpoints01b = { totalMs, stuntScore, respawns, deltasMs: toDeltas(times) }
+}
+
+// u32, u32 ids (1000 at most), ids, u32 events, u32, events x (u32 time, u8 id index, u32 value).
+// empty in every file seen, read for its size so the fields after it line up
+function skipInputStore(r: ByteReader, ids: IdState): void {
+  r.u32()
+  const nIds = r.u32()
+  if (nIds > 1000) {
+    throw new ParseError(`input store declares ${nIds} ids`, r.pos)
+  }
+  for (let i = 0; i < nIds; i++) {
+    readId(r, ids)
+  }
+  const nEvents = r.u32()
+  r.u32()
+  for (let i = 0; i < nEvents; i++) {
+    r.u32()
+    r.u8()
+    r.u32()
+  }
 }
 
 function read01d(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
@@ -136,19 +193,37 @@ function read01d(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
   }
 }
 
-// u32 version, i32 total, i32, i32, i32, i32 n, n x (i32 time, i32 landmark), i32 -1
+// u32 version (2+ carries nothing), i32 race time, i32 stunt, i32 respawns, i32 spawn landmark,
+// i32 n, n x (i32 time, i32 landmark), i32 -1
 function read02b(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
-  p!.u32()
+  if (p!.u32() >= 2) {
+    return
+  }
   const totalMs = p!.i32()
-  p!.i32()
-  p!.i32()
-  p!.i32()
+  const stuntScore = p!.i32()
+  const respawns = p!.i32()
+  const spawnLandmark = p!.i32()
   const n = p!.i32()
   const entries: { timeMs: number; landmark: number }[] = []
   for (let i = 0; i < n; i++) {
     entries.push({ timeMs: p!.i32(), landmark: p!.i32() })
   }
-  g.checkpoints02b = { totalMs, entries }
+  g.checkpoints02b = { totalMs, stuntScore, respawns, spawnLandmark, entries }
+}
+
+function read029(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
+  p!.u32()
+  g.scope = {
+    scopeType: p!.i32(),
+    scopeId: p!.string(),
+    gameMode: p!.string(),
+    customData: p!.string(),
+  }
+}
+
+function read02a(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
+  g.gameRules = p!.u32()
+  g.spawnLandmark = p!.i32()
 }
 
 function read02c(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
@@ -156,10 +231,11 @@ function read02c(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
   g.wallTime = { startUnixSec: p!.u32(), endUnixSec: p!.u32(), source: '02C' }
 }
 
-function read02d(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
-  const u01 = p!.i32()
-  if (u01 >= 1) {
-    return
+// u32 has inputs (then the input store), exe, checksum, os, cpu, wall start, wall end, title id,
+// 32 B title checksum, game rules, spawn landmark, seed, sim flags, race settings
+function read02d(ctx: ReadContext, g: Ghost, p?: ByteReader): void {
+  if (p!.u32() !== 0) {
+    skipInputStore(p!, ctx.ids)
   }
   const exeVersion = p!.string()
   const exeChecksum = p!.u32()
@@ -169,10 +245,10 @@ function read02d(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
   const endUnixSec = p!.u32()
   const titleId = p!.string()
   p!.bytes(32)
-  p!.i32()
-  p!.i32()
+  const gameRules = p!.u32()
+  const spawnLandmark = p!.i32()
   const validationSeed = p!.i32()
-  p!.i32()
+  const simFlags = p!.u32()
   const raceSettings = p!.string()
   g.validation = {
     source: '02D',
@@ -185,35 +261,47 @@ function read02d(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
     titleId,
     validationSeed,
     raceSettings,
+    gameRules,
+    spawnLandmark,
+    simFlags,
   }
   if (!g.wallTime) {
     g.wallTime = { startUnixSec, endUnixSec, source: '02D' }
   }
 }
 
-// 025: u32 1, 20 bytes, exe string, checksum, os, cpu, settings string, seed, i32. read before 02D
-// (lower id), so it stands in until 02D overrides it
-function read025(_ctx: ReadContext, g: Ghost, p?: ByteReader): void {
-  p!.u32()
-  p!.bytes(20)
-  const exeVersion = p!.string()
-  const exeChecksum = p!.u32()
-  const osKind = p!.i32()
-  const cpuKind = p!.i32()
-  const raceSettings = p!.string()
-  const validationSeed = p!.i32()
-  g.validation025 = {
+// 025: u32 version, u32 events duration, input store, exe, checksum, os, cpu, race settings, seed,
+// u32 steering wheel sensitivity flag. read before 02D (lower id), so it stands in until 02D
+// overrides it
+function read025(ctx: ReadContext, g: Ghost, p?: ByteReader): void {
+  const version = p!.u32()
+  const eventsDuration = p!.u32()
+  const validation: Validation = {
     source: '025',
     startUnixSec: null,
     endUnixSec: null,
-    exeVersion,
-    exeChecksum,
-    osKind,
-    cpuKind,
+    exeVersion: '',
+    exeChecksum: 0,
+    osKind: 0,
+    cpuKind: 0,
     titleId: '',
-    validationSeed,
-    raceSettings,
+    validationSeed: 0,
+    raceSettings: '',
+    gameRules: null,
+    spawnLandmark: null,
+    simFlags: null,
   }
+  if (eventsDuration !== 0 || version !== 0) {
+    skipInputStore(p!, ctx.ids)
+    validation.exeVersion = p!.string()
+    validation.exeChecksum = p!.u32()
+    validation.osKind = p!.i32()
+    validation.cpuKind = p!.i32()
+    validation.raceSettings = p!.string()
+    validation.validationSeed = p!.i32()
+    validation.simFlags = p!.u32()
+  }
+  g.validation025 = validation
   if (!g.validation) {
     g.validation = g.validation025
   }
@@ -253,6 +341,12 @@ export const GhostDef: ClassDef<Ghost> = {
       0x03092008,
       (_ctx, g, p) => {
         g.respawns = p!.i32()
+      },
+    ],
+    [
+      0x0309200a,
+      (_ctx, g, p) => {
+        g.stuntScore = p!.i32()
       },
     ],
     [0x0309200b, read00b],
@@ -300,6 +394,8 @@ export const GhostDef: ClassDef<Ghost> = {
     [0x03092023, keepRaw(0x03092023)],
     [0x03092025, read025],
     [0x03092026, read026],
+    [0x03092029, read029],
+    [0x0309202a, read02a],
     [0x0309202b, read02b],
     [0x0309202c, read02c],
     [0x0309202d, read02d],

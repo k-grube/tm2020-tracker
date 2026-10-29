@@ -148,16 +148,18 @@ describe('validation copy and recording id', () => {
     expect(g.unknownChunks).not.toContain(0x03092026)
   })
 
-  test('02D version 1 falls back to 025', () => {
+  test('02D with an input store reads the fields after it', () => {
     const bytes = patchSkippable(loadFixture('slidrz'), 0x0309202d, (p) => {
-      const out = p.slice()
+      // has inputs 1, then an empty store: u32, 0 ids, 0 events, u32
+      const out = new Uint8Array(p.length + 16)
       out[0] = 1
+      out.set(p.subarray(4), 20)
       return out
     })
     const g = parseGbx(bytes).ghosts[0]!
-    expect(g.validation!.source).toBe('025')
+    expect(g.validation!.source).toBe('02D')
     expect(g.validation!.exeVersion).toContain('date=2025-07-04')
     expect(g.validation!.validationSeed).toBe(26593895)
-    expect(g.wallTime!.source).toBe('02C')
+    expect(g.validation).toEqual(parseGbx(loadFixture('slidrz')).ghosts[0]!.validation)
   })
 })

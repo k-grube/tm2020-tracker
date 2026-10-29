@@ -27,6 +27,7 @@ function samplesFrom(steer: Int8Array, gas = true): Sample[] {
       position: [0, 0, 0],
       speedMs: 10,
       simCoef: 1,
+      state: null,
       steer: steer[t]!,
       gas,
       brake: false,
@@ -125,6 +126,7 @@ function straight(jumpMs: number | null): Sample[] {
       position: [x, 0, 0],
       speedMs: 10,
       simCoef: 1,
+      state: null,
       steer: 0,
       gas: true,
       brake: false,
@@ -253,6 +255,7 @@ describe('path_speed_ratio', () => {
       ...s,
       position: [s.position[0] / 2, 0, 0] as [number, number, number],
       simCoef: 0.5,
+      state: null,
     }))
     const r = pathSpeedRatio(ctxWith(samples), null)
     expect(r.fired).toBe(false)

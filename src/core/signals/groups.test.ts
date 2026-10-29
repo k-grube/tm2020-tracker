@@ -237,6 +237,7 @@ describe('trajectory_overlap, time shift', () => {
       position: [Math.max(0, i * 50 - delayMs) / 100, 10, 5] as [number, number, number],
       speedMs: 10,
       simCoef: 1,
+      state: null,
       steer: 0,
       gas: true,
       brake: false,

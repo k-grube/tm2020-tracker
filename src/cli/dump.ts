@@ -2,9 +2,9 @@ import { pickGhost } from '../core/signals/context.ts'
 import { createHash } from 'node:crypto'
 import { parseGbx } from '../core/parse.ts'
 import { decodeInputs } from '../core/inputs/decode.ts'
-import { decodeSamples } from '../core/samples/decode.ts'
+import { decodeRecordData } from '../core/samples/decode.ts'
 import { hex } from '../core/gbx/node.ts'
-import type { Ghost, InputEvent, ParsedFile } from '../core/model.ts'
+import type { ArenaCheckpoint, Ghost, InputEvent, ParsedFile, Sample } from '../core/model.ts'
 import { inflateNode } from './inflate.ts'
 
 export interface ByteSummary {
@@ -36,9 +36,24 @@ export interface DumpResult {
     eventCount: number
     firstEvents: InputEvent[]
   }[]
-  samples: { count: number; firstTimeMs: number; lastTimeMs: number } | null
+  samples: {
+    count: number
+    firstTimeMs: number
+    lastTimeMs: number
+    stateVersion: number | null
+    first: Sample
+  } | null
+  events: {
+    count: number
+    byName: Record<string, number>
+    firstEvents: { timeMs: number; name: string; data: string }[]
+  } | null
+  checkpointRecords: ArenaCheckpoint[]
   unknownChunks: string[]
 }
+
+const hexBytes = (bytes: Uint8Array): string =>
+  Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(' ')
 
 function summarize(bytes: Uint8Array): ByteSummary {
   return { length: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') }
@@ -68,9 +83,35 @@ export async function dumpFile(bytes: Uint8Array, opts: { events: number }): Pro
     }
   })
   let samples: DumpResult['samples'] = null
+  let events: DumpResult['events'] = null
+  let checkpointRecords: ArenaCheckpoint[] = []
   if (first?.recordData) {
-    const s = await decodeSamples(first.recordData, inflateNode, first.raceTimeMs)
-    samples = { count: s.length, firstTimeMs: s[0]?.timeMs ?? 0, lastTimeMs: s.at(-1)?.timeMs ?? 0 }
+    const record = await decodeRecordData(first.recordData, inflateNode, {
+      carIndex: first.entityIndices[0] ?? null,
+      raceTimeMs: first.raceTimeMs,
+    })
+    const s = record.samples
+    if (s[0]) {
+      samples = {
+        count: s.length,
+        firstTimeMs: s[0].timeMs,
+        lastTimeMs: s.at(-1)!.timeMs,
+        stateVersion: record.stateVersion,
+        first: s[0],
+      }
+    }
+    const byName: Record<string, number> = {}
+    for (const e of record.events) {
+      byName[e.name] = (byName[e.name] ?? 0) + 1
+    }
+    events = {
+      count: record.events.length,
+      byName,
+      firstEvents: record.events
+        .slice(0, opts.events)
+        .map((e) => ({ timeMs: e.timeMs, name: e.name, data: hexBytes(e.data) })),
+    }
+    checkpointRecords = record.checkpoints
   }
   return {
     kind: parsed.kind,
@@ -79,6 +120,8 @@ export async function dumpFile(bytes: Uint8Array, opts: { events: number }): Pro
     ghosts: parsed.ghosts.map(dumpGhost),
     inputs,
     samples,
+    events,
+    checkpointRecords,
     unknownChunks: first ? first.unknownChunks.map(hex) : [],
   }
 }
@@ -123,7 +166,21 @@ export function formatDump(d: DumpResult): string {
   })
   if (d.samples) {
     lines.push(
-      `samples: ${d.samples.count}, ${d.samples.firstTimeMs} ms to ${d.samples.lastTimeMs} ms`,
+      `samples: ${d.samples.count}, ${d.samples.firstTimeMs} ms to ${d.samples.lastTimeMs} ms, state v${d.samples.stateVersion}`,
+    )
+  }
+  if (d.events) {
+    const names = Object.entries(d.events.byName)
+      .map(([n, k]) => `${n} x${k}`)
+      .join(', ')
+    lines.push(`events: ${d.events.count}${names ? ` (${names})` : ''}`)
+    for (const e of d.events.firstEvents) {
+      lines.push(`  ${String(e.timeMs).padStart(7)} ms  ${e.name} ${e.data}`)
+    }
+  }
+  if (d.checkpointRecords.length > 0) {
+    lines.push(
+      `checkpoint records: ${d.checkpointRecords.map((c) => `${c.timeMs}@${c.tickMs} lm${c.landmark} f${c.flags}`).join(' ')}`,
     )
   }
   return lines.join('\n') + '\n'

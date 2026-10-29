@@ -16,6 +16,9 @@ const validation = (exeVersion: string, exeChecksum: number): Validation => ({
   titleId: 'Trackmania',
   validationSeed: 7,
   raceSettings: '',
+  gameRules: null,
+  spawnLandmark: null,
+  simFlags: null,
 })
 
 const baseline = {

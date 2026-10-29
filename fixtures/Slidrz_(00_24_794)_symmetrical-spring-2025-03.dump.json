@@ -19,6 +19,18 @@
       "ghostUid": "101879675",
       "raceTimeMs": 24794,
       "respawns": 0,
+      "stuntScore": 0,
+      "gameRules": 4294902313,
+      "spawnLandmark": 5,
+      "scope": {
+        "scopeType": -1,
+        "scopeId": "",
+        "gameMode": "",
+        "customData": ""
+      },
+      "entityIndices": [
+        0
+      ],
       "checkpoints": [
         {
           "timeMs": 6667,
@@ -47,6 +59,8 @@
       ],
       "checkpoints01b": {
         "totalMs": 24794,
+        "stuntScore": 0,
+        "respawns": 0,
         "deltasMs": [
           6667,
           5461,
@@ -58,6 +72,9 @@
       },
       "checkpoints02b": {
         "totalMs": 24794,
+        "stuntScore": 0,
+        "respawns": 0,
+        "spawnLandmark": 5,
         "entries": [
           {
             "timeMs": 6667,
@@ -101,7 +118,10 @@
         "cpuKind": 5,
         "titleId": "Trackmania",
         "validationSeed": 26593895,
-        "raceSettings": "Openplanet 1.27.12 (next, Public, 2025-07-01)"
+        "raceSettings": "Openplanet 1.27.12 (next, Public, 2025-07-01)",
+        "gameRules": 4294902313,
+        "spawnLandmark": 5,
+        "simFlags": 16
       },
       "validation025": {
         "source": "025",
@@ -113,7 +133,10 @@
         "cpuKind": 5,
         "titleId": "",
         "validationSeed": 26593895,
-        "raceSettings": "Openplanet 1.27.12 (next, Public, 2025-07-01)"
+        "raceSettings": "Openplanet 1.27.12 (next, Public, 2025-07-01)",
+        "gameRules": null,
+        "spawnLandmark": null,
+        "simFlags": 0
       },
       "recordingId": "1431f421076d7b8f1206c5636b6c506e",
       "inputs": [
@@ -137,10 +160,6 @@
         }
       },
       "rawChunks": {
-        "0x0309200a": {
-          "length": 4,
-          "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
-        },
         "0x03092022": {
           "length": 8,
           "sha256": "f0a0278e4372459cca6159cd5e71cfee638302a7b9ca9b05c34181ac0a65ac5d"
@@ -161,26 +180,15 @@
           "length": 0,
           "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         },
-        "0x03092029": {
-          "length": 20,
-          "sha256": "9e4b48157507ccb6d544fb0728cb7b6ce6c73ceeea09d50f07303256d4119210"
-        },
-        "0x0309202a": {
-          "length": 8,
-          "sha256": "4c7812db2251d6d2ab2967e8ba80496c477f5e0c592cacd629ede02e1df33e4d"
-        },
         "0x0309202e": {
           "length": 4,
           "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
         }
       },
       "unknownChunks": [
-        "0x0309200a",
         "0x03092024",
         "0x03092027",
         "0x03092028",
-        "0x03092029",
-        "0x0309202a",
         "0x0309202e"
       ]
     }
@@ -318,15 +326,218 @@
   "samples": {
     "count": 496,
     "firstTimeMs": 0,
-    "lastTimeMs": 24750
+    "lastTimeMs": 24750,
+    "stateVersion": 33,
+    "first": {
+      "timeMs": 0,
+      "position": [
+        624,
+        82.00200653076172,
+        1360.0001220703125
+      ],
+      "speedMs": 0.22514739553267432,
+      "steer": 18,
+      "gas": true,
+      "brake": false,
+      "simCoef": 1,
+      "state": {
+        "frontSpeed": -0.12207217517357094,
+        "sideSpeed": -0.015259021896667946,
+        "rpm": 59.96795605401693,
+        "wheelRot": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "steerAngle": -0.012319971190548173,
+        "turboTime": 0,
+        "damper": [
+          0.007843137254901933,
+          0.007843137254901933,
+          0.007843137254901933,
+          0.007843137254901933
+        ],
+        "material": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "isTurbo": false,
+        "wheelsBurning": false,
+        "gasPedal": 1,
+        "discontinuityCount": 7,
+        "topContact": false,
+        "rotation": [
+          0.707132203497541,
+          0.000033896322501555635,
+          -0.7070813571490565,
+          0
+        ],
+        "velocity": [
+          0.002784658935738409,
+          -0.22513017432089844,
+          0
+        ],
+        "icing": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "isGroundContact": true,
+        "gear": 1,
+        "tireWear": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "wetness": 0
+      }
+    }
   },
+  "events": {
+    "count": 14,
+    "byName": {
+      "ImpactWheelFront": 3,
+      "ImpactWheelBack": 6,
+      "TriggeredWaypoint": 5
+    },
+    "firstEvents": [
+      {
+        "timeMs": 3260,
+        "name": "ImpactWheelFront",
+        "data": "06 00 00 02 a0 b0 0e 44 6c bb 9e 42 37 69 a4 44 c1 00 c6 01 10 2a 00 00 00 00 00"
+      },
+      {
+        "timeMs": 3280,
+        "name": "ImpactWheelBack",
+        "data": "06 00 00 02 92 d8 0e 44 cd 55 9f 42 aa ac a4 44 c1 00 c6 02 4c 1a 00 00 00 00 00"
+      },
+      {
+        "timeMs": 6670,
+        "name": "TriggeredWaypoint",
+        "data": "06 00 00 02"
+      },
+      {
+        "timeMs": 10220,
+        "name": "ImpactWheelBack",
+        "data": "06 00 00 02 5c a6 f2 43 4d 3c 47 42 80 23 5f 44 c1 00 c2 01 4c 1e 01 00 00 00 00"
+      },
+      {
+        "timeMs": 10500,
+        "name": "ImpactWheelFront",
+        "data": "06 00 00 02 f2 1a e8 43 f2 05 37 42 01 3b 5b 44 c1 00 c1 02 4c 1e 00 00 00 00 00"
+      },
+      {
+        "timeMs": 10580,
+        "name": "ImpactWheelBack",
+        "data": "06 00 00 02 69 7b e6 43 e6 8c 35 42 d6 ba 5a 44 c1 00 c0 02 4c 36 01 00 00 00 00"
+      },
+      {
+        "timeMs": 12130,
+        "name": "TriggeredWaypoint",
+        "data": "06 00 00 02"
+      },
+      {
+        "timeMs": 17490,
+        "name": "TriggeredWaypoint",
+        "data": "06 00 00 02"
+      },
+      {
+        "timeMs": 18240,
+        "name": "ImpactWheelFront",
+        "data": "06 00 00 02 67 86 22 44 34 8d 46 42 d2 70 b0 43 c1 00 c1 04 4c 2a 01 00 00 00 00"
+      },
+      {
+        "timeMs": 18290,
+        "name": "ImpactWheelBack",
+        "data": "06 00 00 02 9e 9d 22 44 99 6f 46 42 24 c2 af 43 c1 00 c0 03 4c 1e 01 00 00 00 00"
+      },
+      {
+        "timeMs": 21360,
+        "name": "TriggeredWaypoint",
+        "data": "06 00 00 02"
+      },
+      {
+        "timeMs": 23670,
+        "name": "TriggeredWaypoint",
+        "data": "06 00 00 02"
+      },
+      {
+        "timeMs": 23880,
+        "name": "ImpactWheelBack",
+        "data": "06 00 00 02 3f 40 5b 43 25 e7 9d 42 2a aa 69 43 c1 00 c1 00 4c 20 01 00 00 00 00"
+      },
+      {
+        "timeMs": 24760,
+        "name": "ImpactWheelBack",
+        "data": "06 00 00 02 a4 29 02 43 16 10 d4 42 cf a5 54 43 c1 00 c0 fe 4c 70 01 00 00 00 00"
+      }
+    ]
+  },
+  "checkpointRecords": [
+    {
+      "tickMs": 6660,
+      "timeMs": 6667,
+      "diff1": 15,
+      "diff2": 2147483647,
+      "landmark": 3,
+      "flags": 0,
+      "cpIndex": 1
+    },
+    {
+      "tickMs": 12120,
+      "timeMs": 12128,
+      "diff1": -210,
+      "diff2": 2147483647,
+      "landmark": 4,
+      "flags": 0,
+      "cpIndex": 2
+    },
+    {
+      "tickMs": 17480,
+      "timeMs": 17482,
+      "diff1": -201,
+      "diff2": 2147483647,
+      "landmark": 6,
+      "flags": 0,
+      "cpIndex": 3
+    },
+    {
+      "tickMs": 21350,
+      "timeMs": 21350,
+      "diff1": -248,
+      "diff2": 2147483647,
+      "landmark": 2,
+      "flags": 0,
+      "cpIndex": 4
+    },
+    {
+      "tickMs": 23660,
+      "timeMs": 23667,
+      "diff1": -456,
+      "diff2": 2147483647,
+      "landmark": 1,
+      "flags": 0,
+      "cpIndex": 5
+    },
+    {
+      "tickMs": 24790,
+      "timeMs": 24794,
+      "diff1": -560,
+      "diff2": 2147483647,
+      "landmark": 0,
+      "flags": 1,
+      "cpIndex": 6
+    }
+  ],
   "unknownChunks": [
-    "0x0309200a",
     "0x03092024",
     "0x03092027",
     "0x03092028",
-    "0x03092029",
-    "0x0309202a",
     "0x0309202e"
   ]
 }

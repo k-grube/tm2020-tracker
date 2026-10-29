@@ -66,7 +66,10 @@ describe('checkpoint_consistency', () => {
 
   test('not applicable without 00B checkpoints', () => {
     const ctx = fakeCtx({
-      ghost: { checkpoints: [], checkpoints01b: { totalMs: 25000, deltasMs: [25000] } },
+      ghost: {
+        checkpoints: [],
+        checkpoints01b: { totalMs: 25000, stuntScore: 0, respawns: 0, deltasMs: [25000] },
+      },
     })
     const r = checkpointConsistency(ctx, null)
     expect(r.applicable).toBe(false)

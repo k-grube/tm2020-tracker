@@ -1,5 +1,5 @@
 import { decodeInputStream, steerSeries } from '../inputs/decode.ts'
-import { decodeSamples } from '../samples/decode.ts'
+import { decodeRecordData } from '../samples/decode.ts'
 import type { Ghost, Inflate, InputEvent, ParsedFile, Sample } from '../model.ts'
 import { KEYBOARD_STEER_VALUES, PAD_MIN_DISTINCT_STEER } from './constants.ts'
 import type { Device, FileContext, LeaderboardEntry } from './types.ts'
@@ -71,7 +71,11 @@ export async function buildContext(
   let samples: Sample[] | null = null
   if (ghost.recordData) {
     try {
-      samples = await decodeSamples(ghost.recordData, inflate, ghost.raceTimeMs)
+      const record = await decodeRecordData(ghost.recordData, inflate, {
+        carIndex: ghost.entityIndices[0] ?? null,
+        raceTimeMs: ghost.raceTimeMs,
+      })
+      samples = record.samples
     } catch (e) {
       samplesError = `record data not decoded: ${message(e)}`
       parsed.warnings.push(samplesError)
