@@ -185,10 +185,13 @@ describe('stream structure fields', () => {
   test('decoder reports the first vehicle tick, the kind sequence and the min steer', () => {
     const d = decodeInputStream(ghostOf('slidrz').inputs[0]!)
     expect(d.kinds).toEqual([2])
+    expect(d.kindTicks).toEqual([0])
     expect(d.firstVehicleTick).toBe(0)
     expect(d.minSteer).toBe(-127)
     const finished = decodeInputStream(parseGbx(loadCorpusFixture('jdon')).ghosts[0]!.inputs[0]!)
     expect(finished.kinds).toEqual([2, 15])
+    expect(finished.kindTicks[0]).toBe(0)
+    expect(finished.kindTicks[1]).toBeGreaterThan(5000)
   })
 
   test('fields are null on an empty stream', () => {
@@ -200,6 +203,7 @@ describe('stream structure fields', () => {
       data: new Uint8Array(0),
     })
     expect(d.kinds).toEqual([])
+    expect(d.kindTicks).toEqual([])
     expect(d.firstVehicleTick).toBeNull()
     expect(d.minSteer).toBeNull()
   })

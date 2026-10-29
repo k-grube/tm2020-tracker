@@ -14,7 +14,7 @@ export interface EntRecordData {
 }
 
 // vehicle sample from CPlugEntRecordData, position in map meters, speed in m/s, steer -127..127 and
-// gas/brake as the engine applied them that frame
+// gas/brake as the engine applied them that frame, simCoef the simulation time factor (1 normal)
 export interface Sample {
   timeMs: number
   position: [number, number, number]
@@ -22,6 +22,7 @@ export interface Sample {
   steer: number
   gas: boolean
   brake: boolean
+  simCoef: number
 }
 
 export interface Checkpoint {

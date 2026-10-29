@@ -17,10 +17,11 @@ const VEHICLE_CLASS = 0x0a018000
 const SAMPLE_SIZE = 103
 
 // version 11 body: one entity of the given class with 3 samples 100 ms apart, sample 2 positioned at (1, 2, 3)
-function body(classId: number): number[] {
+function body(classId: number, patch: (target: Uint8Array) => void = () => {}): number[] {
   const columns: number[] = []
   const target = new Uint8Array(SAMPLE_SIZE)
   target.set([...f32(1), ...f32(2), ...f32(3)], 47)
+  patch(target)
   for (let i = 0; i < SAMPLE_SIZE; i++) {
     columns.push(0, 0, target[i]!)
   }
@@ -155,6 +156,19 @@ describe('decodeSamples', () => {
     expect(samples[2]!.position).toEqual([1, 2, 3])
     expect(samples[0]!.position).toEqual([0, 0, 0])
     expect(samples[2]!.speedMs).toBeCloseTo(1)
+  })
+
+  test('sim time coefficient from byte 102, zero reads as 1', async () => {
+    const samples = await decodeSamples(
+      record(
+        body(VEHICLE_CLASS, (t) => {
+          t[102] = 145
+        }),
+      ),
+      identity,
+    )
+    expect(samples[0]!.simCoef).toBe(1)
+    expect(samples[2]!.simCoef).toBeCloseTo(145 / 255)
   })
 
   test('inline sample records (version 10)', async () => {

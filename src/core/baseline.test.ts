@@ -68,7 +68,12 @@ describe('computeBaseline', () => {
       ...[1.0, 1.1, 1.2, 1.3, 1.4, 6.0].map((v, i) => reportWith('pad', v, `pad${i}`)),
       ...[1.0, 2.0, 3.0].map((v, i) => reportWith('keyboard', v, `kb${i}`)),
     ]
-    const b = computeBaseline(reports, { ranks: [10, 50], chunkPresence: { '0x0309202c': 1 } })
+    const b = computeBaseline(reports, {
+      ranks: [10, 50],
+      chunkPresence: { '0x0309202c': 1 },
+      builds: { x: { checksum: 1, files: 2 } },
+    })
+    expect(b.builds).toEqual({ x: { checksum: 1, files: 2 } })
     expect(b.files).toBe(9)
     expect(b.ranks).toEqual([10, 50])
     expect(b.chunkPresence['0x0309202c']).toBe(1)

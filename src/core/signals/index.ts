@@ -12,9 +12,12 @@ import { decodeFailure } from './decode-failure.ts'
 import { wallTimeDelta, wallTimeRatio } from './wall-time.ts'
 import { ticksVsRaceTime } from './ticks-vs-racetime.ts'
 import { validationConsistency } from './validation-consistency.ts'
+import { buildChecksum } from './build-checksum.ts'
+import { loginAccount } from './login-account.ts'
 import { checkpointConsistency } from './checkpoint-consistency.ts'
 import { sampleInputMatch } from './sample-input-match.ts'
 import { positionContinuity } from './position-continuity.ts'
+import { pathSpeedRatio } from './path-speed-ratio.ts'
 import { inputStructure } from './input-structure.ts'
 import { metadata } from './metadata.ts'
 import { sameTickToggle } from './same-tick-toggle.ts'
@@ -31,9 +34,12 @@ export const DETECTORS: Detector[] = [
   wallTimeDelta,
   ticksVsRaceTime,
   validationConsistency,
+  buildChecksum,
+  loginAccount,
   checkpointConsistency,
   sampleInputMatch,
   positionContinuity,
+  pathSpeedRatio,
   inputStructure,
   sameTickToggle,
   steerSpikes,

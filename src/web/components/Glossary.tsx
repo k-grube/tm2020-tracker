@@ -20,6 +20,14 @@ const ENTRIES: [string, string][] = [
     'the two validation copies (chunks 02D and 025), the two recording windows (02C and 02D), the build date against the recording start, and a zero seed on a build after 2021. lists the rule that failed',
   ],
   [
+    'build_checksum',
+    'the game build string against the executable checksum the baseline corpus saw with it. a known build with another checksum ran a modified game. a build the corpus has not seen is listed without firing',
+  ],
+  [
+    'login_account',
+    'the login written into the ghost decoded to an account id, against the account the leaderboard credits the record to. only for records pulled from a leaderboard, the file alone has no account to compare',
+  ],
+  [
     'checkpoint_consistency',
     'the split times are stored three times (chunks 00B, 01B, 02B) and the race time twice more. every copy must agree and the last split must equal the race time',
   ],
@@ -32,8 +40,12 @@ const ENTRIES: [string, string][] = [
     'distance between consecutive position samples against the recorded speed times the gap. a jump is a teleport. the ghost declares its respawn count, every jump beyond that count is a seam or an edited position',
   ],
   [
+    'path_speed_ratio',
+    'distance the positions cover over the distance the recorded speed allows, whole race. position and speed are written by different parts of the engine, a run reads 1.00. a retimed or injected position stream reads above it, declared respawns exempt their jumps',
+  ],
+  [
     'input_structure',
-    'shape of the input stream: one entry, one contiguous vehicle state block, the vehicle state inside the first 38 ticks, steer never below -127. lists the rule that failed',
+    'shape of the input stream: one entry, from the race start one contiguous vehicle state block, the vehicle state inside the first 38 ticks, steer never below -127. lists the rule that failed with the tick of every state change, a break between vehicle blocks is drawn on the trace',
   ],
   [
     'same_tick_toggle',

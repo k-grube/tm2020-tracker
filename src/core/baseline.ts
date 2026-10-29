@@ -1,4 +1,11 @@
-import type { Baseline, BaselineStat, Device, FileReport, SignalId } from './signals/types.ts'
+import type {
+  Baseline,
+  BaselineStat,
+  BuildStat,
+  Device,
+  FileReport,
+  SignalId,
+} from './signals/types.ts'
 
 // relative signals get a reference range, everything else has none
 const RELATIVE_IDS: SignalId[] = ['wall_time_delta', 'steer_spikes_per_sec', 'input_density']
@@ -28,7 +35,11 @@ function stat(values: number[]): BaselineStat {
 
 export function computeBaseline(
   reports: FileReport[],
-  meta: { ranks: [number, number]; chunkPresence: Record<string, number> },
+  meta: {
+    ranks: [number, number]
+    chunkPresence: Record<string, number>
+    builds: Record<string, BuildStat>
+  },
 ): Baseline {
   const signals: Baseline['signals'] = {}
   for (const id of RELATIVE_IDS) {
@@ -55,5 +66,6 @@ export function computeBaseline(
     ranks: meta.ranks,
     chunkPresence: meta.chunkPresence,
     signals,
+    builds: meta.builds,
   }
 }

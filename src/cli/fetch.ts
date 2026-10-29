@@ -26,6 +26,9 @@ export interface IndexEntry {
   mapId: number
   mapUid?: string
   recordTimeMs: number
+  // nadeo leaderboards only: the account credited and the server's stamp for the record
+  accountId?: string
+  timestamp?: string
 }
 
 export type FetchIndex = Record<string, IndexEntry>
@@ -118,6 +121,8 @@ export async function fetchCommand(
           mapId: 0,
           mapUid: m.mapUid,
           recordTimeMs: rec.time,
+          accountId: rec.player.id,
+          timestamp: rec.timestamp,
         }
         // a file from an earlier pull keeps its bytes and gets its index entry
         if (fs.exists(`${opts.out}/${filename}`)) {

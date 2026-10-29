@@ -1,3 +1,4 @@
+import type { LeaderboardEntry } from '../core/signals/types.ts'
 import type { StoredFile } from './files.ts'
 
 const DB = 'tm2020-tracker'
@@ -8,6 +9,7 @@ interface Row {
   name: string
   bytes: Uint8Array
   added: number
+  leaderboard?: LeaderboardEntry
 }
 
 export function storeKey(name: string, size: number): string {
@@ -71,7 +73,11 @@ export async function listFiles(): Promise<StoredFile[]> {
   const rows = await run<Row[]>('readonly', (s) => s.getAll() as IDBRequest<Row[]>, [])
   return rows
     .sort((a, b) => a.added - b.added)
-    .map((r) => ({ name: r.name, bytes: new Uint8Array(r.bytes) }))
+    .map((r) => ({
+      name: r.name,
+      bytes: new Uint8Array(r.bytes),
+      ...(r.leaderboard ? { leaderboard: r.leaderboard } : {}),
+    }))
 }
 
 export async function putFile(f: StoredFile): Promise<void> {
@@ -80,6 +86,7 @@ export async function putFile(f: StoredFile): Promise<void> {
     name: f.name,
     bytes: f.bytes,
     added: Date.now(),
+    ...(f.leaderboard ? { leaderboard: f.leaderboard } : {}),
   }
   await run<IDBValidKey>('readwrite', (s) => s.put(row), '')
 }

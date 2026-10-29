@@ -1,11 +1,57 @@
 import { describe, expect, test } from 'vitest'
 import { SIGNAL_IDS } from '../core/signals/types.ts'
 import { execFileSync } from 'node:child_process'
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { parseGbx } from '../core/parse.ts'
 import { analyzeBytes } from '../core/pipeline.ts'
+import { loginToAccountId } from '../core/signals/login-account.ts'
+import { analyzeCommand } from './analyze.ts'
 import { formatReport } from './format-report.ts'
 import { inflateNode } from './inflate.ts'
 import { fixturePath, loadFixture } from '../test/fixtures.ts'
 import { minimalGhostGbx } from '../test/minimal-ghost.ts'
+
+describe('index.json next to the files', () => {
+  test('hands the leaderboard account to login_account', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'tm2020-analyze-'))
+    const bytes = loadFixture('slidrz')
+    writeFileSync(join(dir, 'a.Ghost.Gbx'), bytes)
+    writeFileSync(join(dir, 'b.Ghost.Gbx'), bytes)
+    const own = loginToAccountId(parseGbx(bytes).ghosts[0]!.login)!
+    const entry = { recordId: null, replayId: null, position: 1, mapId: 0, recordTimeMs: 0 }
+    writeFileSync(
+      join(dir, 'index.json'),
+      JSON.stringify({
+        'a.Ghost.Gbx': { ...entry, accountId: own, timestamp: '2026-10-21T16:48:15+00:00' },
+        'b.Ghost.Gbx': { ...entry, accountId: 'ffffffff-0000-0000-0000-000000000000' },
+      }),
+    )
+    const report = await analyzeCommand([dir], null)
+    const sig = (i: number) => report.files[i]!.signals.find((s) => s.id === 'login_account')!
+    expect(sig(0).applicable).toBe(true)
+    expect(sig(0).fired).toBe(false)
+    expect(sig(1).fired).toBe(true)
+    expect(report.files[0]!.signals.find((s) => s.id === 'metadata')!.evidence).toContainEqual(
+      expect.stringMatching(/^leaderboard account .*, set 2026-10-21T16:48:15\+00:00, -?\d+ s/),
+    )
+  })
+
+  test('a file given on its own reads the index of its directory', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'tm2020-analyze-'))
+    writeFileSync(join(dir, 'a.Ghost.Gbx'), loadFixture('slidrz'))
+    const entry = { recordId: null, replayId: null, position: 1, mapId: 0, recordTimeMs: 0 }
+    writeFileSync(
+      join(dir, 'index.json'),
+      JSON.stringify({
+        'a.Ghost.Gbx': { ...entry, accountId: 'ffffffff-0000-0000-0000-000000000000' },
+      }),
+    )
+    const report = await analyzeCommand([join(dir, 'a.Ghost.Gbx')], null)
+    expect(report.files[0]!.signals.find((s) => s.id === 'login_account')!.fired).toBe(true)
+  })
+})
 
 describe('analyzeBytes', () => {
   test('slidrz gives one file report with every signal id', async () => {

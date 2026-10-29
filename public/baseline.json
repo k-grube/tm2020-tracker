@@ -1,40 +1,40 @@
 {
-  "builtAt": "2026-10-28T17:06:03.875Z",
-  "files": 1004,
+  "builtAt": "2026-10-29T07:45:15.719Z",
+  "files": 1417,
   "ranks": [10, 50],
   "chunkPresence": {
     "0x0309201d": 1,
-    "0x0309202c": 0.3456175298804781,
+    "0x0309202c": 0.5363443895553988,
     "0x0309202d": 1,
     "0x03092023": 1
   },
   "signals": {
     "wall_time_delta": {
       "pad": {
-        "n": 244,
-        "median": 1.5210000000000008,
-        "q1": 1.1664999999999992,
-        "q3": 1.7727499999999985
+        "n": 566,
+        "median": 1.5510000000000002,
+        "q1": 1.1920000000000002,
+        "q3": 1.7787500000000005
       },
       "keyboard": {
-        "n": 101,
-        "median": 1.4520000000000017,
-        "q1": 1.0679999999999978,
-        "q3": 1.7370000000000019
+        "n": 192,
+        "median": 1.5319999999999983,
+        "q1": 1.1137499999999996,
+        "q3": 1.7107500000000027
       }
     },
     "steer_spikes_per_sec": {
       "pad": {
-        "n": 696,
-        "median": 2.0801282051282053,
-        "q1": 1.4755639097744362,
-        "q3": 2.7525
+        "n": 1018,
+        "median": 2.25,
+        "q1": 1.5968085106382979,
+        "q3": 2.9344202898550726
       },
       "keyboard": {
-        "n": 302,
-        "median": 2.071794871794872,
-        "q1": 1.3968749999999999,
-        "q3": 2.6321739130434785
+        "n": 393,
+        "median": 2.2,
+        "q1": 1.4615384615384615,
+        "q3": 2.76
       },
       "mixed": {
         "n": 5,
@@ -45,16 +45,16 @@
     },
     "input_density": {
       "pad": {
-        "n": 696,
-        "median": 20.235916358388074,
-        "q1": 14.567151045161326,
-        "q3": 27.017199269969556
+        "n": 1018,
+        "median": 22.46597863140951,
+        "q1": 16.014836074676552,
+        "q3": 30.604183393174672
       },
       "keyboard": {
-        "n": 303,
-        "median": 3.137671365128403,
-        "q1": 2.4674811279052515,
-        "q3": 3.701781286808077
+        "n": 394,
+        "median": 3.2816164671036816,
+        "q1": 2.5951207367005216,
+        "q3": 3.9287566426433917
       },
       "mixed": {
         "n": 5,
@@ -62,6 +62,196 @@
         "q1": 2.116252821670429,
         "q3": 3.201749248369841
       }
+    }
+  },
+  "builds": {
+    "Trackmania date=2024-12-12_15_15 git=127322-0e952939855 GameVersion=3.3.0": {
+      "checksum": 4067038303,
+      "files": 114
+    },
+    "Trackmania date=2020-09-18_14_05 git=102686-b0590ba6640 GameVersion=3.3.0": {
+      "checksum": 578491494,
+      "files": 15
+    },
+    "Trackmania date=2020-07-03_20_32 Svn=105829 GameVersion=3.3.0": {
+      "checksum": 2868313609,
+      "files": 78
+    },
+    "Trackmania date=2020-07-23_20_22 Svn=106224 GameVersion=3.3.0": {
+      "checksum": 424205356,
+      "files": 253
+    },
+    "Trackmania date=2020-07-10_17_08 Svn=106014 GameVersion=3.3.0": {
+      "checksum": 1423184650,
+      "files": 106
+    },
+    "Trackmania date=2026-02-02_17_51 git=128149-c7d05ad2551 GameVersion=3.3.0": {
+      "checksum": 1623925506,
+      "files": 410
+    },
+    "Trackmania date=2024-03-19_14_47 git=126885-cadadbe05fa GameVersion=3.3.0": {
+      "checksum": 3675448728,
+      "files": 38
+    },
+    "Trackmania date=2020-07-17_14_39 Svn=106088 GameVersion=3.3.0": {
+      "checksum": 3152914714,
+      "files": 77
+    },
+    "Trackmania date=2020-07-07_23_07 Svn=105917 GameVersion=3.3.0": {
+      "checksum": 3362355005,
+      "files": 57
+    },
+    "Trackmania date=2025-06-19_21_00 git=127527-9def2ceea10 GameVersion=3.3.0": {
+      "checksum": 1,
+      "files": 1
+    },
+    "Trackmania date=2025-07-04_14_15 git=127535-ebc2b176b45 GameVersion=3.3.0": {
+      "checksum": 2921432346,
+      "files": 55
+    },
+    "Trackmania date=2020-09-25_18_53 git=102838-f6df0e261c2 GameVersion=3.3.0": {
+      "checksum": 2729939923,
+      "files": 19
+    },
+    "Trackmania date=2024-07-02_14_35 git=127172-c8715502da1 GameVersion=3.3.0": {
+      "checksum": 2284274463,
+      "files": 11
+    },
+    "Trackmania date=2020-07-02_17_50 Svn=105813 GameVersion=3.3.0": {
+      "checksum": 4081442452,
+      "files": 14
+    },
+    "Trackmania date=2026-07-22_18_27 git=128191-5daf0c5ba60 GameVersion=3.3.0": {
+      "checksum": 1782355961,
+      "files": 60
+    },
+    "Trackmania date=2020-09-11_18_31 git=102626-95bd8c271a6 GameVersion=3.3.0": {
+      "checksum": 766222983,
+      "files": 15
+    },
+    "Trackmania date=2020-07-23_13_50 Svn=106204 GameVersion=3.3.0": {
+      "checksum": 1746152362,
+      "files": 4
+    },
+    "Trackmania date=2026-01-18_17_00 git=128114-1fee4826934 GameVersion=3.3.0": {
+      "checksum": 1,
+      "files": 18
+    },
+    "Trackmania date=2024-12-03_19_00 git=127318-c035608289f GameVersion=3.3.0": {
+      "checksum": 1,
+      "files": 5
+    },
+    "Trackmania date=2024-02-26_11_36 git=126850-19de8664f7c GameVersion=3.3.0": {
+      "checksum": 14256660,
+      "files": 23
+    },
+    "Trackmania date=2022-05-19_15_03 git=113018-25c17c3a2da GameVersion=3.3.0": {
+      "checksum": 2382732228,
+      "files": 3
+    },
+    "Trackmania date=2020-07-10_13_41 Svn=106003 GameVersion=3.3.0": {
+      "checksum": 1164981042,
+      "files": 4
+    },
+    "Trackmania date=2020-07-07_20_18 Svn=105914 GameVersion=3.3.0": {
+      "checksum": 3244425329,
+      "files": 2
+    },
+    "Trackmania date=2020-09-10_18_08 git=102608-9cc70c2d4d9 GameVersion=3.3.0": {
+      "checksum": 3512475719,
+      "files": 3
+    },
+    "Trackmania date=2021-12-03_11_42 git=105849-ba32fe6873b GameVersion=3.3.0": {
+      "checksum": 2298378628,
+      "files": 1
+    },
+    "Trackmania date=2024-09-17_11_17 git=127252-120dea21a9e GameVersion=3.3.0": {
+      "checksum": 3426849328,
+      "files": 2
+    },
+    "Trackmania date=2020-09-25_17_18 git=102830-aadd2927424 GameVersion=3.3.0": {
+      "checksum": 2590443241,
+      "files": 1
+    },
+    "Trackmania date=2023-01-26_15_32 git=116308-bbf6df4c7ba GameVersion=3.3.0": {
+      "checksum": 3382086310,
+      "files": 1
+    },
+    "Trackmania date=2021-01-07_18_56 git=104134-0fcf38815e6 GameVersion=3.3.0": {
+      "checksum": 869643707,
+      "files": 1
+    },
+    "Trackmania date=2020-09-17_23_23 git=102684-293ef161fe7 GameVersion=3.3.0": {
+      "checksum": 1697749515,
+      "files": 1
+    },
+    "Trackmania date=2024-03-18_16_00 git=126882-1ec72453936 GameVersion=3.3.0": {
+      "checksum": 1,
+      "files": 1
+    },
+    "Trackmania date=2021-03-12_16_50 git=104606-9d0eab35630 GameVersion=3.3.0": {
+      "checksum": 2347859572,
+      "files": 1
+    },
+    "Trackmania date=2023-09-25_23_51 git=121582-c52cb07fb97 GameVersion=3.3.0": {
+      "checksum": 3802200494,
+      "files": 2
+    },
+    "Trackmania date=2024-09-16_20_00 git=127251-8c8bbce6b5f GameVersion=3.3.0": {
+      "checksum": 1,
+      "files": 1
+    },
+    "Trackmania date=2023-11-24_17_34 git=126569-5ad9ff6053d GameVersion=3.3.0": {
+      "checksum": 3560006807,
+      "files": 2
+    },
+    "Trackmania date=2020-11-05_16_41 git=103014-c8b3d9c2b5e GameVersion=3.3.0": {
+      "checksum": 813179749,
+      "files": 1
+    },
+    "Trackmania date=2022-07-06_11_37 git=113150-000f079d96e GameVersion=3.3.0": {
+      "checksum": 1481541085,
+      "files": 1
+    },
+    "Trackmania date=2021-09-30_13_48 git=105712-26556c0f580 GameVersion=3.3.0": {
+      "checksum": 773415817,
+      "files": 1
+    },
+    "Trackmania date=2021-10-28_13_03 git=105784-625e7d03907 GameVersion=3.3.0": {
+      "checksum": 3070199147,
+      "files": 1
+    },
+    "Trackmania date=2020-07-01_13_23 Svn=105768 GameVersion=3.3.0": {
+      "checksum": 3096239566,
+      "files": 3
+    },
+    "Trackmania date=2020-10-02_15_02 git=102933-efee8a14f14 GameVersion=3.3.0": {
+      "checksum": 2025785941,
+      "files": 1
+    },
+    "Trackmania date=2024-04-30_16_52 git=127012-8c94a9edc65 GameVersion=3.3.0": {
+      "checksum": 2001492112,
+      "files": 2
+    },
+    "Trackmania date=2022-05-02_17_14 git=112851-94083b405d0 GameVersion=3.3.0": {
+      "checksum": 672661588,
+      "files": 1
+    },
+    "Trackmania date=2021-07-08_19_39 git=105498-6b9a5dfdeb8 GameVersion=3.3.0": {
+      "checksum": 4278414690,
+      "files": 4
+    },
+    "Trackmania date=2021-10-14_12_24 git=105752-a1db440b242 GameVersion=3.3.0": {
+      "checksum": 3009950786,
+      "files": 1
+    },
+    "Trackmania date=2021-02-15_13_23 git=104519-de1fd715e0e GameVersion=3.3.0": {
+      "checksum": 2163077004,
+      "files": 1
+    },
+    "Trackmania date=2024-01-10_12_53 git=126731-1573de4d161 GameVersion=3.3.0": {
+      "checksum": 2156957066,
+      "files": 1
     }
   }
 }

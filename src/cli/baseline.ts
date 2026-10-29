@@ -4,7 +4,7 @@ import { basename, join } from 'node:path'
 import { computeBaseline } from '../core/baseline.ts'
 import { parseGbx } from '../core/parse.ts'
 import { analyzeBytes, type InputFile } from '../core/pipeline.ts'
-import type { Baseline } from '../core/signals/types.ts'
+import type { Baseline, BuildStat } from '../core/signals/types.ts'
 import { expandPaths } from './analyze.ts'
 import type { FetchIndex } from './fetch.ts'
 import { inflateNode } from './inflate.ts'
@@ -41,6 +41,8 @@ export async function baselineCommand(
   const counts: Record<string, number> = Object.fromEntries(
     Object.keys(TRACKED_CHUNKS).map((id) => [id, 0]),
   )
+  // one checksum per build string, the first file sets it and the count tells how often it recurs
+  const builds: Record<string, BuildStat> = {}
   for (const p of paths) {
     const bytes = readFileBytes(p)
     try {
@@ -51,6 +53,15 @@ export async function baselineCommand(
       for (const [id, has] of Object.entries(presence(ghost))) {
         counts[id]! += has ? 1 : 0
       }
+      if (ghost.validation) {
+        const v = ghost.validation
+        const seen = builds[v.exeVersion]
+        if (seen) {
+          seen.files += seen.checksum === v.exeChecksum ? 1 : 0
+        } else {
+          builds[v.exeVersion] = { checksum: v.exeChecksum, files: 1 }
+        }
+      }
       files.push({ name: p, bytes })
     } catch {
       continue
@@ -60,5 +71,5 @@ export async function baselineCommand(
   const chunkPresence = Object.fromEntries(
     Object.entries(counts).map(([id, n]) => [id, files.length ? n / files.length : 0]),
   )
-  return computeBaseline(report.files, { ranks: opts.ranks, chunkPresence })
+  return computeBaseline(report.files, { ranks: opts.ranks, chunkPresence, builds })
 }

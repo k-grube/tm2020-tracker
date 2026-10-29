@@ -3,10 +3,12 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { parseGbx } from '../core/parse.ts'
+import { loadFixture } from '../test/fixtures.ts'
 import { baselineCommand } from './baseline.ts'
 
 describe('baselineCommand', () => {
-  test('on the fixtures dir records chunk presence', async () => {
+  test('on the fixtures dir records chunk presence and the builds seen', async () => {
     const b = await baselineCommand('fixtures', { ranks: [10, 50] })
     expect(b.files).toBeGreaterThan(0)
     expect(b.ranks).toEqual([10, 50])
@@ -14,6 +16,9 @@ describe('baselineCommand', () => {
     expect(b.chunkPresence['0x0309202c']).toBe(1)
     expect(b.chunkPresence['0x0309202d']).toBe(1)
     expect(b.chunkPresence['0x03092023']).toBe(1)
+    const v = parseGbx(loadFixture('slidrz')).ghosts[0]!.validation!
+    expect(b.builds[v.exeVersion]!.checksum).toBe(v.exeChecksum)
+    expect(b.builds[v.exeVersion]!.files).toBeGreaterThanOrEqual(1)
   })
 
   test('filters by leaderboard position from index.json', async () => {

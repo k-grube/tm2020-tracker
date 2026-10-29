@@ -2,7 +2,7 @@ import { decodeInputStream, steerSeries } from '../inputs/decode.ts'
 import { decodeSamples } from '../samples/decode.ts'
 import type { Ghost, Inflate, InputEvent, ParsedFile, Sample } from '../model.ts'
 import { KEYBOARD_STEER_VALUES, PAD_MIN_DISTINCT_STEER } from './constants.ts'
-import type { Device, FileContext } from './types.ts'
+import type { Device, FileContext, LeaderboardEntry } from './types.ts'
 
 export function detectDevice(steer: Int8Array | null): Device {
   if (!steer || steer.length === 0) {
@@ -37,6 +37,7 @@ export async function buildContext(
   name: string,
   parsed: ParsedFile,
   inflate: Inflate,
+  leaderboard: LeaderboardEntry | null = null,
 ): Promise<FileContext> {
   const ghost = pickGhost(parsed)
   if (!ghost) {
@@ -50,6 +51,7 @@ export async function buildContext(
   let samplesError: string | null = null
   let firstVehicleTick: number | null = null
   let kinds: number[] = []
+  let kindTicks: number[] = []
   let minSteer: number | null = null
   if (input) {
     try {
@@ -58,6 +60,7 @@ export async function buildContext(
       decodedTicks = decoded.decodedTicks
       firstVehicleTick = decoded.firstVehicleTick
       kinds = decoded.kinds
+      kindTicks = decoded.kindTicks
       minSteer = decoded.minSteer
       steer = steerSeries(events, input.ticks)
     } catch (e) {
@@ -78,6 +81,7 @@ export async function buildContext(
     name,
     parsed,
     ghost,
+    leaderboard,
     events,
     steer,
     samples,
@@ -86,6 +90,7 @@ export async function buildContext(
     samplesError,
     firstVehicleTick,
     kinds,
+    kindTicks,
     minSteer,
     device: detectDevice(steer),
   }

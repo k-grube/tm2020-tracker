@@ -8,11 +8,14 @@ export const MAX_RECORD_DATA_BYTES = 128 * 1024 * 1024
 export const VEHICLE_CLASS = 0x0a018000
 
 // vehicle sample payload: byte 14 steer scaled to 0..255, byte 15 gas, byte 18 brake, then at 47 a
-// transform block: vec3 position, u16 angle, i16 heading, i16 pitch, i16 log speed, 2 unverified bytes
+// transform block: vec3 position, u16 angle, i16 heading, i16 pitch, i16 log speed, 2 unverified
+// bytes. byte 102 is the simulation time coefficient scaled to 0..255, maps with a slow-motion
+// stretch write 145 there, older payloads leave it 0
 const STEER_OFFSET = 14
 const GAS_OFFSET = 15
 const BRAKE_OFFSET = 18
 const TRANSFORM_OFFSET = 47
+const SIM_COEF_OFFSET = 102
 const SAMPLE_INTERVAL_MS = 50
 const LOG_SPEED_OFFSET = TRANSFORM_OFFSET + 12 + 2 + 2 + 2
 const MIN_PAYLOAD = LOG_SPEED_OFFSET + 2
@@ -25,6 +28,7 @@ function decodeVehicle(timeMs: number, buf: Uint8Array): Sample {
     dv.getFloat32(TRANSFORM_OFFSET + 8, true),
   ]
   const speedMs = Math.exp(dv.getInt16(LOG_SPEED_OFFSET, true) / 1000)
+  const coefByte = buf.length > SIM_COEF_OFFSET ? buf[SIM_COEF_OFFSET]! : 0
   return {
     timeMs,
     position,
@@ -32,6 +36,7 @@ function decodeVehicle(timeMs: number, buf: Uint8Array): Sample {
     steer: Math.ceil((buf[STEER_OFFSET]! * 254) / 255) - 127,
     gas: buf[GAS_OFFSET] !== 0,
     brake: buf[BRAKE_OFFSET] !== 0,
+    simCoef: coefByte === 0 ? 1 : coefByte / 255,
   }
 }
 

@@ -27,8 +27,9 @@ function bitOf(v: bigint, bit: number): number {
 export interface DecodedInputs {
   events: InputEvent[]
   decodedTicks: number
-  // full-state kinds in order of appearance, repeats collapsed
+  // full-state kinds in order of appearance, repeats collapsed, and the tick each one started
   kinds: number[]
+  kindTicks: number[]
   firstVehicleTick: number | null
   minSteer: number | null
 }
@@ -52,6 +53,7 @@ export function decodeInputStream(d: PlayerInputData): DecodedInputs {
   let mouseX = 0
   let mouseY = 0
   const kinds: number[] = []
+  const kindTicks: number[] = []
   let firstVehicleTick: number | null = null
   let minSteer: number | null = null
 
@@ -85,6 +87,7 @@ export function decodeInputStream(d: PlayerInputData): DecodedInputs {
           state = kind === 0 ? 'notStarted' : kind >= 2 && kind <= 4 ? 'vehicle' : 'character'
           if (kinds.at(-1) !== kind) {
             kinds.push(kind)
+            kindTicks.push(tick)
           }
           if (state === 'vehicle' && firstVehicleTick === null) {
             firstVehicleTick = tick
@@ -158,7 +161,7 @@ export function decodeInputStream(d: PlayerInputData): DecodedInputs {
       throw new ParseError('trailing input data', i)
     }
   }
-  return { events, decodedTicks, kinds, firstVehicleTick, minSteer }
+  return { events, decodedTicks, kinds, kindTicks, firstVehicleTick, minSteer }
 }
 
 // per-tick value of a binary input, forward-filled, 0 before its first event

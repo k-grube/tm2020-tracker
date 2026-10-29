@@ -43,11 +43,20 @@ describe('trajectory_overlap, hostile times', () => {
       fakeCtx({
         ghost: { ghostUid: uid },
         samples: [
-          { timeMs: 0, position: [0, 0, 0], speedMs: 0, steer: 0, gas: false, brake: false },
+          {
+            timeMs: 0,
+            position: [0, 0, 0],
+            speedMs: 0,
+            simCoef: 1,
+            steer: 0,
+            gas: false,
+            brake: false,
+          },
           {
             timeMs: 2_000_000_000,
             position: [1, 1, 1],
             speedMs: 0,
+            simCoef: 1,
             steer: 0,
             gas: false,
             brake: false,

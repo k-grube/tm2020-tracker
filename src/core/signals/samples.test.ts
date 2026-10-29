@@ -6,6 +6,7 @@ import type { InputEvent, Sample } from '../model.ts'
 import { parseGbx } from '../parse.ts'
 import { analyzeBytes } from '../pipeline.ts'
 import { buildContext } from './context.ts'
+import { pathSpeedRatio } from './path-speed-ratio.ts'
 import { positionContinuity } from './position-continuity.ts'
 import { sampleInputMatch } from './sample-input-match.ts'
 import { fakeCtx, steerEvents } from './test-util.ts'
@@ -25,6 +26,7 @@ function samplesFrom(steer: Int8Array, gas = true): Sample[] {
       timeMs: t * 10,
       position: [0, 0, 0],
       speedMs: 10,
+      simCoef: 1,
       steer: steer[t]!,
       gas,
       brake: false,
@@ -118,7 +120,15 @@ function straight(jumpMs: number | null): Sample[] {
   const out: Sample[] = []
   for (let t = 0; t <= 20000; t += 50) {
     const x = t / 100 + (jumpMs !== null && t >= jumpMs ? 5 : 0)
-    out.push({ timeMs: t, position: [x, 0, 0], speedMs: 10, steer: 0, gas: true, brake: false })
+    out.push({
+      timeMs: t,
+      position: [x, 0, 0],
+      speedMs: 10,
+      simCoef: 1,
+      steer: 0,
+      gas: true,
+      brake: false,
+    })
   }
   return out
 }
@@ -190,6 +200,83 @@ describe('position_continuity', () => {
     const ctx = await buildContext('p', parseGbx(loadCorpusFixture('propanoia')), inflateNode)
     expect(positionContinuity(ctx, null).fired).toBe(false)
   })
+})
+
+describe('path_speed_ratio', () => {
+  const ctxWith = (samples: Sample[], respawns = 0) =>
+    fakeCtx({ samples, ghost: { raceTimeMs: 20000, respawns } })
+  const shifted = (fromMs: number, byM: number): Sample[] =>
+    straight(null).map((s) =>
+      s.timeMs >= fromMs
+        ? { ...s, position: [s.position[0] + byM, 0, 0] as [number, number, number] }
+        : s,
+    )
+
+  test('a path that matches the speed reads 1 and does not fire', () => {
+    const r = pathSpeedRatio(ctxWith(straight(null)), null)
+    expect(r.level).toBe('empirical')
+    expect(r.applicable).toBe(true)
+    expect(r.fired).toBe(false)
+    expect(r.value).toBeCloseTo(1, 2)
+    expect(r.evidence[0]).toBe('path 198 m, speed allows 198 m, ratio 1.00')
+  })
+
+  test('positions advancing twice as fast as the speed fire', () => {
+    const samples = straight(null).map((s) => ({
+      ...s,
+      position: [s.position[0] * 2, 0, 0] as [number, number, number],
+    }))
+    const r = pathSpeedRatio(ctxWith(samples), null)
+    expect(r.fired).toBe(true)
+    expect(r.value).toBeCloseTo(2, 2)
+  })
+
+  test('a 20 m jump fires without a respawn and is exempt with one', () => {
+    expect(pathSpeedRatio(ctxWith(shifted(10000, 20)), null).fired).toBe(true)
+    const r = pathSpeedRatio(ctxWith(shifted(10000, 20), 1), null)
+    expect(r.fired).toBe(false)
+    expect(r.value).toBeCloseTo(1, 2)
+    expect(r.evidence[1]).toBe('1 jumps, 1 exempt for 1 respawns')
+  })
+
+  test('two 20 m jumps on one respawn fire', () => {
+    const samples = shifted(10000, 20).map((s) =>
+      s.timeMs >= 15000
+        ? { ...s, position: [s.position[0] + 20, 0, 0] as [number, number, number] }
+        : s,
+    )
+    expect(pathSpeedRatio(ctxWith(samples, 1), null).fired).toBe(true)
+  })
+
+  test('the sim time coefficient scales the allowed distance', () => {
+    const samples = straight(null).map((s) => ({
+      ...s,
+      position: [s.position[0] / 2, 0, 0] as [number, number, number],
+      simCoef: 0.5,
+    }))
+    const r = pathSpeedRatio(ctxWith(samples), null)
+    expect(r.fired).toBe(false)
+    expect(r.value).toBeCloseTo(1, 2)
+  })
+
+  test('a jump inside the last 200 ms is excluded', () => {
+    expect(pathSpeedRatio(ctxWith(shifted(19900, 20)), null).fired).toBe(false)
+  })
+
+  test('not applicable without samples or with too few pairs', () => {
+    expect(pathSpeedRatio(fakeCtx(), null).applicable).toBe(false)
+    expect(pathSpeedRatio(ctxWith(straight(null).slice(0, 10)), null).applicable).toBe(false)
+  })
+
+  test.each(['slidrz', 'tmio', 'localReplay', 'localPbReplay'] as const)(
+    'real file %s does not fire',
+    async (name) => {
+      const ctx = await buildContext(name, parseGbx(loadFixture(name)), inflateNode)
+      const r = pathSpeedRatio(ctx, null)
+      expect(r.fired).toBe(false)
+      expect(r.value).toBeLessThan(1.05)
+    },
+  )
 })
 
 describe('sample_input_match, action keys', () => {

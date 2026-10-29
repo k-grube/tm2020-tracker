@@ -309,6 +309,7 @@ describe('input_structure', () => {
     fakeCtx({
       events: steerEvents([10, 20]),
       kinds: [2, 15],
+      kindTicks: [0, 200],
       firstVehicleTick: 0,
       minSteer: -127,
     })
@@ -332,10 +333,42 @@ describe('input_structure', () => {
     expect(r.evidence.join(' ')).toContain('2 input entries')
   })
 
-  test('a vehicle state after the finish state fires', () => {
-    const r = inputStructure(fakeCtx({ ...clean(), kinds: [2, 15, 2] }), null)
+  test('a vehicle state after the finish state fires with the break as a span', () => {
+    const r = inputStructure(
+      fakeCtx({ ...clean(), kinds: [2, 15, 2], kindTicks: [0, 100, 120] }),
+      null,
+    )
     expect(r.fired).toBe(true)
-    expect(r.evidence.join(' ')).toContain('2,15,2')
+    expect(r.evidence).toContain('state sequence 2,15,2 at ticks 0,100,120')
+    expect(r.spans).toEqual([{ startTick: 100, endTick: 120, label: 'break' }])
+  })
+
+  test('a break inside the countdown does not fire, the ticks stay listed', () => {
+    const countdown = {
+      ...clean(),
+      kinds: [15, 2, 15, 2, 15],
+      kindTicks: [0, 2, 5, 15, 2049],
+      firstVehicleTick: 2,
+      ghost: {
+        inputs: [
+          { version: 12, u01: 0, startOffsetMs: -1510, ticks: 2056, data: new Uint8Array(0) },
+        ],
+      },
+    }
+    const r = inputStructure(fakeCtx(countdown), null)
+    expect(r.fired).toBe(false)
+    expect(r.evidence).toEqual(['states 15,2,15,2,15 at ticks 0,2,5,15,2049, vehicle from tick 2'])
+    expect(r.spans).toBeUndefined()
+    const inRace = fakeCtx({ ...countdown, kindTicks: [0, 2, 500, 510, 2049] })
+    const fired = inputStructure(inRace, null)
+    expect(fired.fired).toBe(true)
+    expect(fired.spans).toEqual([{ startTick: 500, endTick: 510, label: 'break' }])
+  })
+
+  test('a clean stream lists its state ticks', () => {
+    expect(inputStructure(clean(), null).evidence).toEqual([
+      'states 2,15 at ticks 0,200, vehicle from tick 0',
+    ])
   })
 
   test('steer -128 fires', () => {
@@ -363,12 +396,14 @@ describe('input_structure', () => {
   )
 
   test('a finish word before and after the vehicle block is the shape of nine legit records', () => {
-    expect(inputStructure(fakeCtx({ ...clean(), kinds: [15, 2, 15] }), null).fired).toBe(false)
-    expect(inputStructure(fakeCtx({ ...clean(), kinds: [14, 2] }), null).fired).toBe(false)
+    const around = fakeCtx({ ...clean(), kinds: [15, 2, 15], kindTicks: [0, 1, 200] })
+    expect(inputStructure(around, null).fired).toBe(false)
+    const before = fakeCtx({ ...clean(), kinds: [14, 2], kindTicks: [0, 1] })
+    expect(inputStructure(before, null).fired).toBe(false)
   })
 
   test('an unknown kind fires', () => {
-    const r = inputStructure(fakeCtx({ ...clean(), kinds: [2, 7] }), null)
+    const r = inputStructure(fakeCtx({ ...clean(), kinds: [2, 7], kindTicks: [0, 200] }), null)
     expect(r.fired).toBe(true)
     expect(r.evidence.join(' ')).toContain('2,7')
   })

@@ -6,9 +6,12 @@ export const SIGNAL_IDS = [
   'wall_time_delta',
   'ticks_vs_racetime',
   'validation_consistency',
+  'build_checksum',
+  'login_account',
   'checkpoint_consistency',
   'sample_input_match',
   'position_continuity',
+  'path_speed_ratio',
   'input_structure',
   'same_tick_toggle',
   'steer_spikes_per_sec',
@@ -55,10 +58,18 @@ export interface SignalResult {
   spans?: Span[]
 }
 
+// who the leaderboard credits the record to and the server's stamp for it, from the fetch index or
+// the record the page downloaded
+export interface LeaderboardEntry {
+  accountId: string
+  timestamp: string | null
+}
+
 export interface FileContext {
   name: string
   parsed: ParsedFile
   ghost: Ghost
+  leaderboard: LeaderboardEntry | null
   events: InputEvent[]
   steer: Int8Array | null
   samples: Sample[] | null
@@ -70,6 +81,7 @@ export interface FileContext {
   // stream structure from the input decoder, empty or null without decodable inputs
   firstVehicleTick: number | null
   kinds: number[]
+  kindTicks: number[]
   minSteer: number | null
   device: Device
 }
@@ -81,12 +93,19 @@ export interface BaselineStat {
   q3: number
 }
 
+// executable checksum seen with one build string, and in how many corpus files
+export interface BuildStat {
+  checksum: number
+  files: number
+}
+
 export interface Baseline {
   builtAt: string
   files: number
   ranks: [number, number]
   chunkPresence: Record<string, number>
   signals: Partial<Record<SignalId, Partial<Record<Device, BaselineStat>>>>
+  builds: Record<string, BuildStat>
 }
 
 export type Detector = (ctx: FileContext, baseline: Baseline | null) => SignalResult

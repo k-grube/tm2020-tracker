@@ -1,4 +1,15 @@
-import type { Detector } from './types.ts'
+import { UNSET_U32 } from './constants.ts'
+import type { Detector, FileContext } from './types.ts'
+
+// seconds from the recording's wall end to the server stamp, null without both
+function stampAfterWallEnd(ctx: FileContext): number | null {
+  const end = ctx.ghost.wallTime?.endUnixSec
+  const stamp = Date.parse(ctx.leaderboard?.timestamp ?? '')
+  if (end === undefined || end === UNSET_U32 || Number.isNaN(stamp)) {
+    return null
+  }
+  return Math.round(stamp / 1000) - end
+}
 
 export const metadata: Detector = (ctx) => {
   const g = ctx.ghost
@@ -32,6 +43,13 @@ export const metadata: Detector = (ctx) => {
     )
   }
   evidence.push(`recording id ${g.recordingId ?? '-'}`)
+  if (ctx.leaderboard) {
+    const after = stampAfterWallEnd(ctx)
+    evidence.push(
+      `leaderboard account ${ctx.leaderboard.accountId}, set ${ctx.leaderboard.timestamp ?? '-'}` +
+        (after === null ? '' : `, ${after} s after the wall end`),
+    )
+  }
   for (const w of ctx.parsed.warnings) {
     evidence.push(`warning: ${w}`)
   }

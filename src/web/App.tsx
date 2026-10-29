@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Baseline, Report } from '../core/signals/types.ts'
+import type { Baseline, LeaderboardEntry, Report } from '../core/signals/types.ts'
 import type { FileViz } from './viz.ts'
 import type { AnalyzeRequest, WorkerResponse } from './worker-protocol.ts'
 import { DropZone } from './components/DropZone.tsx'
@@ -95,7 +95,11 @@ export function App() {
     }
     setBusy(true)
     pendingSelect.current = select
-    const payload = next.map((f) => ({ name: f.name, bytes: f.bytes.slice().buffer }))
+    const payload = next.map((f) => ({
+      name: f.name,
+      bytes: f.bytes.slice().buffer,
+      ...(f.leaderboard ? { leaderboard: f.leaderboard } : {}),
+    }))
     const msg: AnalyzeRequest = { type: 'analyze', files: payload, baseline: baselineRef.current }
     worker.current.postMessage(
       msg,
@@ -147,7 +151,7 @@ export function App() {
   }
 
   // a bare uuid may live on either site, the first url that answers with a gbx file wins
-  const fetchRecord = async (urls: string[]) => {
+  const fetchRecord = async (urls: string[], leaderboard?: LeaderboardEntry) => {
     if (!PROXY) {
       return
     }
@@ -169,7 +173,7 @@ export function App() {
         const name =
           /filename="([^"]+)"/.exec(disposition)?.[1] ?? `${url.split('/').pop()}.Ghost.Gbx`
         setBusy(false)
-        addAndAnalyze([{ name, bytes }])
+        addAndAnalyze([{ name, bytes, ...(leaderboard ? { leaderboard } : {}) }])
         return
       }
       throw new Error(last)
@@ -244,7 +248,12 @@ export function App() {
         <CampaignBrowser
           proxy={PROXY}
           busy={busy}
-          onAnalyze={(r) => fetchRecord([recordGhostUrl(r.ghostId)])}
+          onAnalyze={(r) =>
+            fetchRecord([recordGhostUrl(r.ghostId)], {
+              accountId: r.playerId,
+              timestamp: r.timestamp,
+            })
+          }
         />
       ) : (
         <>

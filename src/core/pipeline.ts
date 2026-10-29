@@ -3,11 +3,12 @@ import { parseGbx } from './parse.ts'
 import { buildContext } from './signals/context.ts'
 import { analyzeFiles, errorReport } from './signals/index.ts'
 import type { Inflate } from './model.ts'
-import type { Baseline, FileContext, Report } from './signals/types.ts'
+import type { Baseline, FileContext, LeaderboardEntry, Report } from './signals/types.ts'
 
 export interface InputFile {
   name: string
   bytes: Uint8Array
+  leaderboard?: LeaderboardEntry
 }
 
 // same entry for the cli and the web page. a file whose header fails is not a gbx file and gets an
@@ -24,7 +25,7 @@ export async function analyzeBytes(
     try {
       parseHeader(f.bytes)
       review = true
-      ctxs.push(await buildContext(f.name, parseGbx(f.bytes), inflate))
+      ctxs.push(await buildContext(f.name, parseGbx(f.bytes), inflate, f.leaderboard ?? null))
       errors.push({ message: '', review: false })
     } catch (e) {
       ctxs.push(null)

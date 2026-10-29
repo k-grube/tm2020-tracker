@@ -207,6 +207,8 @@ describe('fetchCommand --campaign', () => {
       mapId: 0,
       mapUid: 'u1',
       recordTimeMs: 19988,
+      accountId: 'p1',
+      timestamp: 't',
     })
   })
 

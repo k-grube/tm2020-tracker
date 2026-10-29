@@ -42,6 +42,7 @@ export function fakeCtx(
     name: 'fake',
     parsed: { kind: 'ghost', ghosts: [ghost], replay: null, warnings: [] },
     ghost,
+    leaderboard: null,
     events: [],
     steer: null,
     samples: null,
@@ -50,6 +51,7 @@ export function fakeCtx(
     samplesError: null,
     firstVehicleTick: null,
     kinds: [],
+    kindTicks: [],
     minSteer: null,
     device: 'unknown',
     ...rest,
@@ -67,6 +69,7 @@ export function fakeBaseline(
     ranks: [10, 50],
     chunkPresence: {},
     signals: { [id]: { [device]: { n: 100, ...stat } } },
+    builds: {},
   }
 }
 
@@ -84,6 +87,7 @@ export function fakeSamples(positions: [number, number, number][], stepMs = 10):
     timeMs: i * stepMs,
     position,
     speedMs: 10,
+    simCoef: 1,
     steer: 0,
     gas: true,
     brake: false,

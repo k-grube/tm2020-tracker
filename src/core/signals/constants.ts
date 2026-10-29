@@ -55,6 +55,11 @@ export const CONTINUITY_SLACK_M = 0.05
 export const CONTINUITY_EXCLUDE_MS = 200
 export const CONTINUITY_SETTLE_MS = 1000
 
+// path_speed_ratio: distance the positions cover over what the recorded speed allows, summed over
+// the race. 1878 legit no-respawn records read 0.998 to 1.000, the removed record reads 3.14
+export const PATH_SPEED_MAX_RATIO = 1.05
+export const PATH_SPEED_MIN_PAIRS = 20
+
 // input_structure: across 1247 records the vehicle state (2) is one contiguous block, the only
 // other full-state kinds are 14 and 15 (before the block or at the finish), and the block starts
 // within the first ticks
