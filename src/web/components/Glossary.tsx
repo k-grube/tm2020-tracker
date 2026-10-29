@@ -101,9 +101,9 @@ export function Glossary() {
       </summary>
       <p className="mt-2 text-zinc-500">
         absolute: one file contradicts itself, one hit flags the file. empirical: a fixed rule not
-        seen in 1247 legit records, one hit flags the file. relative: outside the top-record range
-        for the device, needs the baseline, two hits flag the file. info: shown, never fires. red
-        bars on the steer trace mark the ticks a fired check points at
+        seen in the legit corpus, one hit flags the file. relative: outside the top-record range for
+        the device, needs the baseline, two hits flag the file. info: shown, never fires. red bars
+        on the steer trace mark the ticks a fired check points at
       </p>
       <dl className="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-[max-content_1fr]">
         {ENTRIES.map(([id, text]) => (

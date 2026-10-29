@@ -40,7 +40,7 @@ node src/cli/main.ts analyze fixtures/wr --baseline public/baseline.json
 | `wall_time_ratio`        | info                 | the same as a ratio, per login across files                                                                                                                                                                               |
 | `ticks_vs_racetime`      | absolute             | input ticks x 10 ms + start offset against race time, tolerance 2 ticks. Fires when the inputs end before the finish                                                                                                      |
 | `validation_consistency` | empirical            | the two validation copies agree, the two recording windows agree, end stamp set and after start, wall time at least the race time, start after the build date, seed 0 only on builds before 2022                          |
-| `build_checksum`         | empirical            | executable checksum against the one the baseline saw with that build string, one per build across 47 builds. An unseen build is listed and does not fire                                                                  |
+| `build_checksum`         | empirical            | executable checksum against the one the baseline saw with that build string, one per build in the baseline. An unseen build is listed and does not fire                                                                   |
 | `login_account`          | absolute             | ghost login (base64url of the account uuid) against the account the leaderboard credits. Needs the record's leaderboard entry                                                                                             |
 | `checkpoint_consistency` | absolute             | the three stored split lists agree, every split is after the start and after the previous one, the last equals the race time, the spawn landmark is none of the split landmarks                                           |
 | `checkpoint_records`     | empirical            | every split but the finish has a checkpoint record in the record data at its exact ms, version 11 record data only. Lists the splits without one                                                                          |
@@ -59,15 +59,14 @@ node src/cli/main.ts analyze fixtures/wr --baseline public/baseline.json
 | `checkpoint_split_match` | info, two files      | identical split times across files from one login                                                                                                                                                                         |
 | `metadata`               | info                 | login, nickname, zone, club tag, map, model, samples, ghosts in a replay, build, race settings, validation seed, recording id, leaderboard account and stamp, decode warnings                                             |
 
-`absolute`: the file contradicts itself. `empirical`: a fixed rule, never seen in 1891 legit records. `relative`: outside the Tukey fence (1.5 IQR) of the reference for the file's device, silent without a reference. `info`: never fires. `needs human review`: an absolute or empirical signal fired, or two or more relative ones.
+`absolute`: the file contradicts itself. `empirical`: a fixed rule the legit corpus behind the baseline never trips. `relative`: outside the Tukey fence (1.5 IQR) of the reference for the file's device, silent without a reference. `info`: never fires. `needs human review`: an absolute or empirical signal fired, or two or more relative ones.
 
-`public/baseline.json`: 1417 records at ranks 10 to 50 from the Summer 2020 and Fall 2026 campaigns and 7 popular maps, built with `baseline`.
+`public/baseline.json`: official campaign and popular map records at ranks 10 to 50, built with `baseline`. The page shows its record count.
 
 Fired signals carry the ticks they point at, drawn as red bars on the steer trace.
 
 ## Caveats
 
-- 93 removed records have been through this, pulled by record id. 40 fire an absolute or empirical check, 19 fire the wall clock only, 33 fire nothing. Five are kept as fixtures: DeleteCheatWRs (teleports, `path_speed_ratio` 3.14), Kopatych.xDD (transformation map, wall clock 1.4x), Blackpro921OG (car parked, finish fired), tommac1n0 (checkpoint before the start), PixelDani (1.5 s finish after 16 m)
 - injected inputs, or slow motion with patched timestamps, leave a self-consistent file that passes every check
 - the 2021 references come from TMNF/TMUF replays
 - action slots 2 and 4 have an extra bit the decoder ignores

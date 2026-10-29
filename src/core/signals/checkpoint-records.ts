@@ -4,7 +4,7 @@ import type { Detector } from './types.ts'
 
 // the arena player writes a checkpoint record at the exact ms of every split it drives through,
 // the finish one is missing when the recording stops on the finish tick. version 11 record data
-// backs every other split in 773 legit records, version 10 builds write no records at all
+// backs every other split in every legit record, version 10 builds write no records at all
 export const checkpointRecords: Detector = (ctx) => {
   const records = ctx.checkpointRecords
   if (records === null) {

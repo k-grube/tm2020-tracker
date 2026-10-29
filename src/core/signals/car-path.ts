@@ -2,7 +2,7 @@ import { CAR_PATH_MIN_MS, CAR_PATH_MIN_SAMPLES } from './constants.ts'
 import { notApplicable } from './relative.ts'
 import type { Detector } from './types.ts'
 
-// distance the positions cover inside the race per race second. 1891 legit records never read
+// distance the positions cover inside the race per race second. legit records never read
 // below 49 m/s, a car parked at the start while the finish fires reads 0
 export const carPath: Detector = (ctx) => {
   const samples = ctx.samples

@@ -31,7 +31,7 @@ export const checkpointConsistency: Detector = (ctx) => {
       failed.push(`cp${i + 1} ${times[i]} ms not after cp${i} ${times[i - 1]} ms`)
     }
   }
-  // the run spawns at the start landmark, 1123 legit records never spawn at a split's landmark
+  // the run spawns at the start landmark, legit records never spawn at a split's landmark
   if (g.checkpoints02b) {
     const spawn = g.checkpoints02b.spawnLandmark
     const at = g.checkpoints02b.entries.findIndex((e) => e.landmark === spawn)
