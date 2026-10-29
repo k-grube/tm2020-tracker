@@ -6,7 +6,7 @@ import { baselineCommand } from './baseline.ts'
 import { BASELINE_RANKS } from '../core/signals/constants.ts'
 import { dumpFile, formatDump } from './dump.ts'
 import { createTmxClient } from './tmx.ts'
-import { createTmioClient } from './tmio.ts'
+import { createNadeoClient, type NadeoClient } from '../nadeo/client.ts'
 import { fetchCommand, type FetchFs } from './fetch.ts'
 import { analyzeCommand } from './analyze.ts'
 import { formatReport, formatSummary } from './format-report.ts'
@@ -14,13 +14,15 @@ import type { Baseline } from '../core/signals/types.ts'
 
 const USAGE = `usage:
   dump <file> [--json] [--events N]
-  fetch (--map <tmxMapId> [--count N] [--uploads] | --campaign <tmioCampaignId> [--count N] | --ghost <uuid> | --search <name>) --out <dir>
+  fetch (--map <tmxMapId> [--count N] [--uploads] | --campaign <name|id> [--count N] | --ghost <recordId> | --search <name>) --out <dir>
   analyze <file|dir>... [--json | --summary] [--baseline <file>]
   baseline <dir> --out <file> [--ranks lo:hi]
 `
 
 const USER_AGENT = 'tm2020-tracker/0.1 (+https://github.com/k-grube/tm2020-tracker)'
 const DOWNLOAD_DELAY_MS = 250
+// a campaign pull runs minutes, one request a second is the sustained rate nadeo tolerates
+const NADEO_GAP_MS = 1000
 
 const nodeFs: FetchFs = {
   writeFile: (path, data) => {
@@ -28,6 +30,30 @@ const nodeFs: FetchFs = {
   },
   readText: (path) => (existsSync(path) ? readFileSync(path, 'utf8') : null),
   exists: (path) => existsSync(path),
+}
+
+// credentials live in .env or .env.local (vite order, later wins): NADEO_LOGIN, NADEO_PASSWORD,
+// optional TM_OAUTH_CLIENT_ID and TM_OAUTH_CLIENT_SECRET for display names
+function nadeoFromEnv(): NadeoClient | undefined {
+  for (const file of ['.env', '.env.local']) {
+    if (existsSync(file)) {
+      process.loadEnvFile(file)
+    }
+  }
+  const { NADEO_LOGIN, NADEO_PASSWORD, TM_OAUTH_CLIENT_ID, TM_OAUTH_CLIENT_SECRET } = process.env
+  if (!NADEO_LOGIN || !NADEO_PASSWORD) {
+    return undefined
+  }
+  return createNadeoClient({
+    fetchFn: fetch,
+    userAgent: USER_AGENT,
+    credentials: { login: NADEO_LOGIN, password: NADEO_PASSWORD },
+    oauth:
+      TM_OAUTH_CLIENT_ID && TM_OAUTH_CLIENT_SECRET
+        ? { clientId: TM_OAUTH_CLIENT_ID, clientSecret: TM_OAUTH_CLIENT_SECRET }
+        : null,
+    gapMs: NADEO_GAP_MS,
+  })
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -53,13 +79,10 @@ async function main(argv: string[]): Promise<number> {
       const lines = await fetchCommand(
         {
           client: createTmxClient(fetch, USER_AGENT),
-          tmio: createTmioClient(fetch, USER_AGENT),
+          nadeo: nadeoFromEnv(),
           out,
           map: typeof args.flags.map === 'string' ? intFlag(args.flags, 'map', 0) : undefined,
-          campaign:
-            typeof args.flags.campaign === 'string'
-              ? intFlag(args.flags, 'campaign', 0)
-              : undefined,
+          campaign: typeof args.flags.campaign === 'string' ? args.flags.campaign : undefined,
           count: intFlag(args.flags, 'count', 50),
           uploads: args.flags.uploads === true,
           ghost: typeof args.flags.ghost === 'string' ? args.flags.ghost : undefined,

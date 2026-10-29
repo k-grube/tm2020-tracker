@@ -1,9 +1,9 @@
-import type { Baseline, LeaderboardEntry, Report } from '../core/signals/types.ts'
+import type { Baseline, Report } from '../core/signals/types.ts'
 import type { FileViz } from './viz.ts'
 
 export interface AnalyzeRequest {
   type: 'analyze'
-  files: { name: string; bytes: ArrayBuffer; leaderboard?: LeaderboardEntry }[]
+  files: { name: string; bytes: ArrayBuffer }[]
   baseline: Baseline | null
 }
 

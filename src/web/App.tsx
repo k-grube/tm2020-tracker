@@ -1,17 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Baseline, LeaderboardEntry, Report } from '../core/signals/types.ts'
+import type { Baseline, Report } from '../core/signals/types.ts'
 import type { FileViz } from './viz.ts'
 import type { AnalyzeRequest, WorkerResponse } from './worker-protocol.ts'
 import { DropZone } from './components/DropZone.tsx'
 import { FileReportView } from './components/FileReportView.tsx'
 import { FileTabs, type TabSort } from './components/FileTabs.tsx'
 import { GroupsView } from './components/GroupsView.tsx'
-import { CampaignBrowser } from './components/CampaignBrowser.tsx'
-import { MapRecords } from './components/MapRecords.tsx'
 import { Glossary } from './components/Glossary.tsx'
 import { addFiles, type StoredFile } from './files.ts'
-import { isGbx, proxiedUrl, recordUrls } from './proxy.ts'
-import { recordGhostUrl } from './tmio.ts'
+import { recordUrls } from './record-url.ts'
 import { clearFiles, deleteFile, listFiles, putFile } from './store.ts'
 
 interface Result {
@@ -19,17 +16,9 @@ interface Result {
   viz: (FileViz | null)[]
 }
 
-// cors proxy in front of the download hosts, worker/proxy.js, unset means a plain download link
-const PROXY = (import.meta.env.VITE_PROXY_URL as string | undefined) || undefined
-
 const INPUT =
   'w-[24rem] max-w-full rounded-md border border-zinc-300 bg-white px-2 py-1 font-mono text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100'
-const BUTTON =
-  'rounded-md bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50'
 const LINK = 'text-blue-600 hover:underline dark:text-blue-400'
-const TAB = 'rounded-md px-3 py-1 text-sm'
-const TAB_ON = `${TAB} bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900`
-const TAB_OFF = `${TAB} text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800`
 
 // a missing file, a fetch error, or json without signals all mean no baseline
 async function loadBaseline(): Promise<Baseline | null> {
@@ -47,6 +36,9 @@ async function loadBaseline(): Promise<Baseline | null> {
   }
 }
 
+const linkLabel = (url: string): string =>
+  new URL(url).hostname.includes('nadeo') ? 'nadeo' : 'tmx'
+
 export function App() {
   const worker = useRef<Worker | null>(null)
   const pendingSelect = useRef<number | null>(null)
@@ -60,7 +52,6 @@ export function App() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [uuid, setUuid] = useState('')
-  const [mode, setMode] = useState<'files' | 'campaign' | 'map'>('files')
 
   useEffect(() => {
     const w = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
@@ -95,11 +86,7 @@ export function App() {
     }
     setBusy(true)
     pendingSelect.current = select
-    const payload = next.map((f) => ({
-      name: f.name,
-      bytes: f.bytes.slice().buffer,
-      ...(f.leaderboard ? { leaderboard: f.leaderboard } : {}),
-    }))
+    const payload = next.map((f) => ({ name: f.name, bytes: f.bytes.slice().buffer }))
     const msg: AnalyzeRequest = { type: 'analyze', files: payload, baseline: baselineRef.current }
     worker.current.postMessage(
       msg,
@@ -150,39 +137,6 @@ export function App() {
     addAndAnalyze(incoming)
   }
 
-  // a bare uuid may live on either site, the first url that answers with a gbx file wins
-  const fetchRecord = async (urls: string[], leaderboard?: LeaderboardEntry) => {
-    if (!PROXY) {
-      return
-    }
-    setBusy(true)
-    try {
-      let last = ''
-      for (const url of urls) {
-        const res = await fetch(proxiedUrl(PROXY, url))
-        if (!res.ok) {
-          last = `proxy ${res.status}: ${await res.text()}`
-          continue
-        }
-        const bytes = new Uint8Array(await res.arrayBuffer())
-        if (!isGbx(bytes)) {
-          last = `${url}: not a Gbx file`
-          continue
-        }
-        const disposition = res.headers.get('Content-Disposition') ?? ''
-        const name =
-          /filename="([^"]+)"/.exec(disposition)?.[1] ?? `${url.split('/').pop()}.Ghost.Gbx`
-        setBusy(false)
-        addAndAnalyze([{ name, bytes, ...(leaderboard ? { leaderboard } : {}) }])
-        return
-      }
-      throw new Error(last)
-    } catch (e) {
-      setBusy(false)
-      setError(e instanceof Error ? e.message : String(e))
-    }
-  }
-
   const remove = (i: number) => {
     const gone = files[i]
     if (gone) {
@@ -211,82 +165,24 @@ export function App() {
   return (
     <main className="mx-auto max-w-5xl px-4 pt-6 pb-16">
       <h1 className="text-xl font-semibold tracking-tight">tm2020 replay analyzer</h1>
-      {PROXY && (
-        <div className="mt-4 flex gap-1" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === 'files'}
-            className={mode === 'files' ? TAB_ON : TAB_OFF}
-            onClick={() => setMode('files')}
-          >
-            files
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === 'campaign'}
-            className={mode === 'campaign' ? TAB_ON : TAB_OFF}
-            onClick={() => setMode('campaign')}
-          >
-            campaign leaderboards
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === 'map'}
-            className={mode === 'map' ? TAB_ON : TAB_OFF}
-            onClick={() => setMode('map')}
-          >
-            map records
-          </button>
-        </div>
-      )}
-      {mode === 'map' && PROXY ? (
-        <MapRecords proxy={PROXY} busy={busy} onFiles={addAndAnalyze} />
-      ) : mode === 'campaign' && PROXY ? (
-        <CampaignBrowser
-          proxy={PROXY}
-          busy={busy}
-          onAnalyze={(r) =>
-            fetchRecord([recordGhostUrl(r.ghostId)], {
-              accountId: r.playerId,
-              timestamp: r.timestamp,
-            })
-          }
-        />
-      ) : (
-        <>
-          <DropZone onFiles={analyze} busy={busy} />
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-            <label className="flex flex-wrap items-center gap-2">
-              <span className="text-zinc-600 dark:text-zinc-400">record uuid or url</span>
-              <input
-                className={INPUT}
-                value={uuid}
-                onChange={(e) => setUuid(e.target.value)}
-                placeholder="e9beeecb-c76a-44dc-93db-e733acbd3998"
-                spellCheck={false}
-              />
-            </label>
-            {urls.length > 0 &&
-              (PROXY ? (
-                <button
-                  type="button"
-                  className={BUTTON}
-                  onClick={() => fetchRecord(urls)}
-                  disabled={busy}
-                >
-                  fetch
-                </button>
-              ) : (
-                <a className={LINK} href={urls[0]} target="_blank" rel="noreferrer">
-                  download
-                </a>
-              ))}
-          </div>
-        </>
-      )}
+      <DropZone onFiles={analyze} busy={busy} />
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+        <label className="flex flex-wrap items-center gap-2">
+          <span className="text-zinc-600 dark:text-zinc-400">record uuid or url</span>
+          <input
+            className={INPUT}
+            value={uuid}
+            onChange={(e) => setUuid(e.target.value)}
+            placeholder="e9beeecb-c76a-44dc-93db-e733acbd3998"
+            spellCheck={false}
+          />
+        </label>
+        {urls.map((url) => (
+          <a key={url} className={LINK} href={url} target="_blank" rel="noreferrer">
+            download from {linkLabel(url)}
+          </a>
+        ))}
+      </div>
       <p className="mt-2 text-sm text-zinc-500">
         {baseline === undefined
           ? 'baseline loading'

@@ -1,5 +1,6 @@
-import type { TmxClient } from './tmx.ts'
-import { ghostFilename, type TmioClient } from './tmio.ts'
+import { sanitizeFilename, type TmxClient } from './tmx.ts'
+import type { NadeoClient } from '../nadeo/client.ts'
+import { campaignMaps, mapLeaderboard } from '../nadeo/leaderboard.ts'
 
 export interface FetchFs {
   writeFile(path: string, data: Uint8Array | string): void
@@ -9,12 +10,14 @@ export interface FetchFs {
 
 export interface FetchOptions {
   client: TmxClient
-  tmio?: TmioClient
+  nadeo?: NadeoClient
   out: string
   map?: number
-  campaign?: number
+  // official campaign by id or name
+  campaign?: string
   count: number
   uploads: boolean
+  // nadeo map record id
   ghost?: string
   search?: string
 }
@@ -33,9 +36,40 @@ export interface IndexEntry {
 
 export type FetchIndex = Record<string, IndexEntry>
 
+// the official list goes back years, 50 covers it
+const CAMPAIGN_LIST_LENGTH = 50
+
+export function kebab(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+export function ghostFilename(player: string, timeMs: number, mapName: string): string {
+  const time = String(timeMs).padStart(7, '0')
+  return `${sanitizeFilename(player)}_(${time})_${kebab(mapName)}.Ghost.Gbx`
+}
+
 function readIndex(fs: FetchFs, path: string): FetchIndex {
   const text = fs.readText(path)
   return text ? (JSON.parse(text) as FetchIndex) : {}
+}
+
+function requireNadeo(opts: FetchOptions, flag: string): NadeoClient {
+  if (!opts.nadeo) {
+    throw new Error(`fetch ${flag} needs NADEO_LOGIN and NADEO_PASSWORD`)
+  }
+  return opts.nadeo
+}
+
+async function findCampaign(nadeo: NadeoClient, key: string) {
+  const list = await nadeo.campaigns(CAMPAIGN_LIST_LENGTH)
+  const found = list.find((c) => String(c.id) === key || c.name.toLowerCase() === key.toLowerCase())
+  if (!found) {
+    throw new Error(`campaign ${key} not found, official: ${list.map((c) => c.name).join(', ')}`)
+  }
+  return found
 }
 
 // returns the lines to print
@@ -65,14 +99,28 @@ export async function fetchCommand(
   }
 
   if (opts.ghost !== undefined) {
-    const dl = await client.downloadOnlineRecord(opts.ghost)
-    save(dl.filename, dl.bytes, {
-      recordId: opts.ghost,
+    const nadeo = requireNadeo(opts, '--ghost')
+    const rec = await nadeo.mapRecord(opts.ghost)
+    const [map] = await nadeo.mapInfoById([rec.mapId])
+    const names = await nadeo.displayNames([rec.accountId])
+    const filename = ghostFilename(
+      names[rec.accountId] ?? rec.accountId,
+      rec.timeMs,
+      map?.name ?? rec.mapId,
+    )
+    save(filename, await nadeo.download(rec.url), {
+      recordId: rec.mapRecordId,
       replayId: null,
       position: 0,
       mapId: 0,
-      recordTimeMs: 0,
+      ...(map ? { mapUid: map.mapUid } : {}),
+      recordTimeMs: rec.timeMs,
+      accountId: rec.accountId,
+      timestamp: rec.timestamp,
     })
+    if (rec.removed) {
+      lines[lines.length - 1] += ' removed'
+    }
   } else if (opts.map !== undefined && opts.uploads) {
     const replays = await client.listReplays(opts.map, opts.count)
     for (const [i, r] of replays.entries()) {
@@ -104,24 +152,23 @@ export async function fetchCommand(
       })
     }
   } else if (opts.campaign !== undefined) {
-    if (!opts.tmio) {
-      throw new Error('fetch --campaign needs a trackmania.io client')
-    }
-    const campaign = await opts.tmio.campaign(opts.campaign)
-    lines.push(`${campaign.name}: ${campaign.maps.length} maps`)
+    const nadeo = requireNadeo(opts, '--campaign')
+    const campaign = await findCampaign(nadeo, opts.campaign)
+    const maps = await campaignMaps(nadeo, campaign)
+    lines.push(`${campaign.name}: ${maps.length} maps`)
     let first = true
-    for (const m of campaign.maps) {
-      const records = await opts.tmio.leaderboard(m.mapUid, opts.count)
+    for (const m of maps) {
+      const records = await mapLeaderboard(nadeo, m.mapUid, m.mapId, opts.count)
       for (const rec of records) {
-        const filename = ghostFilename(rec.player.name, rec.time, m.name)
+        const filename = ghostFilename(rec.player, rec.timeMs, m.name)
         const entry: IndexEntry = {
-          recordId: rec.url.split('/').pop() ?? null,
+          recordId: rec.recordId,
           replayId: null,
           position: rec.position,
           mapId: 0,
           mapUid: m.mapUid,
-          recordTimeMs: rec.time,
-          accountId: rec.player.id,
+          recordTimeMs: rec.timeMs,
+          accountId: rec.accountId,
           timestamp: rec.timestamp,
         }
         // a file from an earlier pull keeps its bytes and gets its index entry
@@ -135,8 +182,7 @@ export async function fetchCommand(
           await sleep()
         }
         first = false
-        const dl = await opts.tmio.downloadGhost(rec.url, rec.player.name, rec.time, m.name)
-        save(filename, dl.bytes, entry)
+        save(filename, await nadeo.download(rec.url), entry)
       }
     }
   } else {

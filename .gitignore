@@ -2,6 +2,7 @@ node_modules/
 dist/
 coverage/
 fixtures/*/
+.env
 .env*.local
 .superpowers/
 .idea/

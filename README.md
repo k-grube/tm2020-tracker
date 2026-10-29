@@ -6,11 +6,7 @@ Page: https://k-grube.github.io/tm2020-tracker/
 
 ## Page
 
-- **files**: drop `.Ghost.Gbx` or `.Replay.Gbx`, or paste a record uuid, a TMX replay id, or a download url from trackmania.exchange or trackmania.io
-- **campaign leaderboards**: pick an official campaign and a map, analyze a record from the top 25
-- **map records**: paste a TMX map link or id, analyze the top 25 as one batch
-
-Files stay in a tab strip across reloads. Dot per file: green nothing fired, amber a check fired, red needs review, gray did not parse. The whole set is analyzed together, so the cross-file checks see every loaded file. The glossary under the report explains each check.
+Drop `.Ghost.Gbx` or `.Replay.Gbx` files. A pasted record uuid, TMX replay id or download url turns into a download link, the page itself never fetches anything. Files stay in a tab strip across reloads. Dot per file: green nothing fired, amber a check fired, red needs review, gray did not parse. The whole set is analyzed together, so the cross-file checks see every loaded file. The glossary under the report explains each check.
 
 ## CLI
 
@@ -18,20 +14,20 @@ Node 22+, no build step.
 
 ```
 node src/cli/main.ts dump <file> [--json] [--events N]
-node src/cli/main.ts fetch (--map <tmxMapId> [--count N] [--uploads] | --campaign <tmioCampaignId> [--count N] | --ghost <uuid> | --search <name>) --out <dir>
+node src/cli/main.ts fetch (--map <tmxMapId> [--count N] [--uploads] | --campaign <name|id> [--count N] | --ghost <recordId> | --search <name>) --out <dir>
 node src/cli/main.ts analyze <file|dir>... [--json | --summary] [--baseline <file>]
 node src/cli/main.ts baseline <dir> --out <file> [--ranks lo:hi]
 ```
 
 - `dump`: chunk tree, decoded fields, hex of unknown chunks, first N input events
-- `fetch`: records as `.Ghost.Gbx` plus an `index.json` with position, map, record time and ids. `--map` pulls TMX online records (`--uploads` for user replays, `--search` for map ids). `--campaign` pulls the top N of every map in an official campaign through trackmania.io (the number in `trackmania.io/#/campaigns/seasonal/<id>`) and stores each record's account id and server stamp
+- `fetch`: records as `.Ghost.Gbx` plus an `index.json` with position, map, record time and ids. `--map` pulls TMX online records (`--uploads` for user replays, `--search` for map ids). `--campaign` pulls the top N of every map in an official campaign (`"Fall 2026"` or its id) from the Nadeo API and stores each record's account id and server stamp. `--ghost` pulls one record by its Nadeo record id the same way, removed records included, the output line says `removed`. Needs `NADEO_LOGIN` and `NADEO_PASSWORD` in `.env` or `.env.local`, a service account or dedicated server account from trackmania.com. `TM_OAUTH_CLIENT_ID` and `TM_OAUTH_CLIENT_SECRET` (an OAuth app on api.trackmania.com) add player names, without them the account id names the file. One request a second, a 25 map campaign at `--count 25` takes about 12 minutes
 - `analyze`: report per file plus cross-file signals. `--json` is the report the page builds, `--summary` counts fired per signal. Reads `index.json` next to the files for the account check
 - `baseline`: reference ranges per signal and steer device, plus the executable checksum per build, over a directory of fetched records, ranks 10 to 50 by default
 
 Current world records of a campaign:
 
 ```
-node src/cli/main.ts fetch --campaign 157584 --count 1 --out fixtures/wr
+node src/cli/main.ts fetch --campaign "Fall 2026" --count 1 --out fixtures/wr
 node src/cli/main.ts analyze fixtures/wr --baseline public/baseline.json
 ```
 
@@ -83,7 +79,7 @@ npm run lint
 npm run dev
 ```
 
-The page downloads through a CORS proxy named by `VITE_PROXY_URL` (`worker/proxy.js`, a Cloudflare Worker with `ALLOWED_ORIGINS` set). Without it the files tab shows a download link. Fixtures live in `fixtures/` with `*.dump.json` goldens, `fetch` output in `fixtures/*/` is git-ignored. `.github/workflows/pages.yml` deploys `main` to Pages.
+Fixtures live in `fixtures/` with `*.dump.json` goldens, `fetch` output in `fixtures/*/` is git-ignored. `.github/workflows/pages.yml` deploys `main` to Pages.
 
 ## Prior art
 

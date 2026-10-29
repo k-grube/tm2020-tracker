@@ -1,10 +1,8 @@
-import type { LeaderboardEntry } from '../core/signals/types.ts'
 import { fmtMs } from './format.ts'
 
 export interface StoredFile {
   name: string
   bytes: Uint8Array
-  leaderboard?: LeaderboardEntry
 }
 
 // append files not already held (same name and size), returns the indexes that were added

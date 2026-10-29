@@ -137,40 +137,6 @@ describe('SteerTrace scrollbar', () => {
   })
 })
 
-describe('RecordTable', () => {
-  test('renders one row per record with an analyze button', async () => {
-    const { RecordTable } = await import('./components/CampaignBrowser.tsx')
-    const html = renderToStaticMarkup(
-      createElement(RecordTable, {
-        records: [
-          {
-            position: 1,
-            player: 'KarjeN',
-            playerId: 'p',
-            timeMs: 19988,
-            timestamp: '2026-10-21T16:48:15+00:00',
-            ghostId: 'g1',
-          },
-          {
-            position: 2,
-            player: 'hobbi.',
-            playerId: 'q',
-            timeMs: 20001,
-            timestamp: '2026-10-22T10:00:00+00:00',
-            ghostId: 'g2',
-          },
-        ],
-        busy: false,
-        onAnalyze: () => {},
-      }),
-    )
-    expect((html.match(/<tr/g) ?? []).length).toBe(3)
-    expect(html).toContain('KarjeN')
-    expect(html).toContain('19.988')
-    expect((html.match(/>analyze</g) ?? []).length).toBe(2)
-  })
-})
-
 describe('TrackBar', () => {
   test('stretches the 800 unit track over the full width and places the thumb', async () => {
     const { TrackBar } = await import('./components/SteerTrace.tsx')
@@ -251,17 +217,6 @@ describe('Glossary', () => {
       expect(html, id).toContain(`>${id}<`)
     }
     expect(html).toContain('<details')
-  })
-})
-
-describe('MapRecords', () => {
-  test('button is disabled until the field holds a tmx map id', async () => {
-    const { MapRecords } = await import('./components/MapRecords.tsx')
-    const empty = renderToStaticMarkup(
-      createElement(MapRecords, { proxy: 'https://p', busy: false, onFiles: () => {} }),
-    )
-    expect(empty).toContain('analyze top 25')
-    expect(empty).toMatch(/<button[^>]*disabled/)
   })
 })
 

@@ -25,7 +25,7 @@ const ENTRIES: [string, string][] = [
   ],
   [
     'login_account',
-    'the login written into the ghost decoded to an account id, against the account the leaderboard credits the record to. only for records pulled from a leaderboard, the file alone has no account to compare',
+    'the login written into the ghost decoded to an account id, against the account the leaderboard credits the record to. only for files the cli pulled from a campaign leaderboard, a dropped file has no account to compare',
   ],
   [
     'checkpoint_consistency',

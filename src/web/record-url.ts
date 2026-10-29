@@ -1,8 +1,10 @@
+import { REPLAY_BASE, replayUrl } from '../nadeo/client.ts'
+
 export const TMX_RECORD_BASE = 'https://trackmania.exchange/getonlinerecord/'
 export const TMX_REPLAY_BASE = 'https://trackmania.exchange/recordgbx/'
-export const TMIO_GHOST_BASE = 'https://trackmania.io/api/download/ghost/'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const REPLAY_HOST = new URL(REPLAY_BASE).hostname
 
 export function tmxRecordUrl(uuid: string): string {
   return TMX_RECORD_BASE + uuid.toLowerCase()
@@ -12,20 +14,13 @@ export function tmxReplayUrl(id: string): string {
   return TMX_REPLAY_BASE + id
 }
 
-export function tmioGhostUrl(uuid: string): string {
-  return TMIO_GHOST_BASE + uuid.toLowerCase()
-}
-
-export function proxiedUrl(proxy: string, target: string): string {
-  return `${proxy.replace(/\/+$/, '')}/?url=${encodeURIComponent(target)}`
-}
-
-// download urls to try in order for a pasted id or url, rebuilt from the id so only tmx and
-// trackmania.io are ever fetched. a bare uuid exists on either site, a bare number is a tmx upload
+// download links for a pasted id or url, rebuilt from the id so only tmx and the nadeo record
+// store are ever linked. a bare uuid is a tmx record or a nadeo map record, a bare number is a
+// tmx upload
 export function recordUrls(input: string): string[] {
   const text = input.trim()
   if (UUID.test(text)) {
-    return [tmxRecordUrl(text), tmioGhostUrl(text)]
+    return [tmxRecordUrl(text), replayUrl(text)]
   }
   if (/^\d+$/.test(text)) {
     return [tmxReplayUrl(text)]
@@ -47,15 +42,11 @@ export function recordUrls(input: string): string[] {
       return [tmxReplayUrl(id)]
     }
   }
-  if (host === 'trackmania.io' && parts.length === 4) {
-    const [a, b, c, id] = parts as [string, string, string, string]
-    if (a === 'api' && b === 'download' && c === 'ghost' && UUID.test(id)) {
-      return [tmioGhostUrl(id)]
+  if (host === REPLAY_HOST && parts.length === 3) {
+    const [kind, id, tail] = parts as [string, string, string]
+    if (kind === 'mapRecords' && UUID.test(id) && tail === 'replay') {
+      return [replayUrl(id)]
     }
   }
   return []
-}
-
-export function isGbx(bytes: Uint8Array): boolean {
-  return bytes.length >= 3 && bytes[0] === 0x47 && bytes[1] === 0x42 && bytes[2] === 0x58
 }
