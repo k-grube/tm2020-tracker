@@ -21,9 +21,23 @@ export const checkpointConsistency: Detector = (ctx) => {
     return notApplicable('checkpoint_consistency', 'absolute', 'no checkpoint times')
   }
   const failed: string[] = []
+  times.forEach((t, i) => {
+    if (t <= 0) {
+      failed.push(`cp${i + 1} ${t} ms at or before the start`)
+    }
+  })
   for (let i = 1; i < times.length; i++) {
     if (times[i]! <= times[i - 1]!) {
       failed.push(`cp${i + 1} ${times[i]} ms not after cp${i} ${times[i - 1]} ms`)
+    }
+  }
+  // the run spawns at the start landmark, 1123 legit records never spawn at a split's landmark
+  if (g.checkpoints02b) {
+    const spawn = g.checkpoints02b.spawnLandmark
+    const at = g.checkpoints02b.entries.findIndex((e) => e.landmark === spawn)
+    if (at >= 0) {
+      const label = at === g.checkpoints02b.entries.length - 1 ? 'the finish' : `cp${at + 1}`
+      failed.push(`spawn landmark ${spawn} is the landmark of ${label}`)
     }
   }
   const race = g.raceTimeMs

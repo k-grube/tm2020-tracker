@@ -87,7 +87,7 @@ export async function dumpFile(bytes: Uint8Array, opts: { events: number }): Pro
   let checkpointRecords: ArenaCheckpoint[] = []
   if (first?.recordData) {
     const record = await decodeRecordData(first.recordData, inflateNode, {
-      carIndex: first.entityIndices[0] ?? null,
+      carIndices: first.entityIndices,
       raceTimeMs: first.raceTimeMs,
     })
     const s = record.samples

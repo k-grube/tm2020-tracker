@@ -76,6 +76,46 @@ describe('checkpoint_consistency', () => {
     expect(r.fired).toBe(false)
   })
 
+  test('a split at or before the start fires', () => {
+    const ctx = fakeCtx({
+      ghost: {
+        raceTimeMs: 3644,
+        checkpoints: [
+          { timeMs: -1540, stuntsScore: 0 },
+          { timeMs: 3644, stuntsScore: 0 },
+        ],
+      },
+    })
+    const r = checkpointConsistency(ctx, null)
+    expect(r.fired).toBe(true)
+    expect(r.evidence).toEqual(['cp1 -1540 ms at or before the start'])
+  })
+
+  test('a spawn landmark that is a split landmark fires', () => {
+    const ctx = fakeCtx({
+      ghost: {
+        raceTimeMs: 23900,
+        checkpoints: [
+          { timeMs: 7245, stuntsScore: 0 },
+          { timeMs: 23900, stuntsScore: 0 },
+        ],
+        checkpoints02b: {
+          totalMs: 23900,
+          stuntScore: 0,
+          respawns: 0,
+          spawnLandmark: 4,
+          entries: [
+            { timeMs: 7245, landmark: 0 },
+            { timeMs: 23900, landmark: 4 },
+          ],
+        },
+      },
+    })
+    const r = checkpointConsistency(ctx, null)
+    expect(r.fired).toBe(true)
+    expect(r.evidence).toEqual(['spawn landmark 4 is the landmark of the finish'])
+  })
+
   test('a last checkpoint off the race time fires', () => {
     const ctx = fakeCtx({
       ghost: { raceTimeMs: 25000, checkpoints: [{ timeMs: 24000, stuntsScore: 0 }] },

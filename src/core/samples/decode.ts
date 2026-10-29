@@ -93,8 +93,9 @@ interface Element {
 }
 
 export interface DecodeOptions {
-  // chunk 000 entity index of the car, the longest vehicle element on the 50 ms grid without it
-  carIndex?: number | null
+  // chunk 000 entity indices, the car's elements in time order. without them the longest vehicle
+  // element on the 50 ms grid stands in
+  carIndices?: number[]
   raceTimeMs?: number | null
 }
 
@@ -362,26 +363,28 @@ export async function decodeRecordData(
 
   const classOf = (e: Element): number => descs[e.desc]?.classId ?? 0
   const versionOf = (e: Element): number => descs[e.desc]?.version ?? 0
-  const carIndex = opts.carIndex ?? null
-  let car = carIndex !== null ? (elements[carIndex] ?? null) : null
-  let samples: Sample[] =
-    car && classOf(car) === VEHICLE_CLASS ? vehicleSamples(car, versionOf(car)) : []
-  if (!car || classOf(car) !== VEHICLE_CLASS) {
-    car = null
+  // the indexed elements are the car in segments, a transformation gate starts a new one
+  let car = (opts.carIndices ?? [])
+    .map((i) => elements[i])
+    .filter((e): e is Element => e !== undefined && classOf(e) === VEHICLE_CLASS)
+  if (car.length === 0) {
+    let best: Sample[] = []
     for (const e of elements) {
       if (classOf(e) !== VEHICLE_CLASS) {
         continue
       }
       const candidate = vehicleSamples(e, versionOf(e))
-      if (!car || better(candidate, samples, opts.raceTimeMs ?? null)) {
-        car = e
-        samples = candidate
+      if (car.length === 0 || better(candidate, best, opts.raceTimeMs ?? null)) {
+        car = [e]
+        best = candidate
       }
     }
   }
+  car.sort((a, b) => (a.times[0] ?? Infinity) - (b.times[0] ?? Infinity))
+  const samples = car.flatMap((e) => vehicleSamples(e, versionOf(e)))
 
   const events: RecordEvent[] = []
-  for (const d of car?.deltas ?? []) {
+  for (const d of car.flatMap((e) => e.deltas)) {
     const notice = notices[d.type]
     if (notice?.classId !== VEHICLE_CLASS) {
       continue
@@ -389,6 +392,7 @@ export async function decodeRecordData(
     const name = VEHICLE_EVENTS[notice.localId] ?? `event ${notice.localId}`
     events.push({ timeMs: d.timeMs, localId: notice.localId, name, data: d.data })
   }
+  events.sort((a, b) => a.timeMs - b.timeMs)
   const checkpoints: ArenaCheckpoint[] = []
   for (const e of elements) {
     if (classOf(e) !== ARENA_CLASS) {
@@ -409,7 +413,7 @@ export async function decodeRecordData(
     samples,
     events,
     checkpoints,
-    stateVersion: car ? (descs[car.desc]?.version ?? null) : null,
+    stateVersion: car[0] ? versionOf(car[0]) : null,
   }
 }
 

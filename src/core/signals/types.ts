@@ -1,4 +1,4 @@
-import type { Ghost, InputEvent, ParsedFile, Sample } from '../model.ts'
+import type { ArenaCheckpoint, Ghost, InputEvent, ParsedFile, Sample } from '../model.ts'
 
 export const SIGNAL_IDS = [
   'decode_failure',
@@ -9,9 +9,11 @@ export const SIGNAL_IDS = [
   'build_checksum',
   'login_account',
   'checkpoint_consistency',
+  'checkpoint_records',
   'sample_input_match',
   'position_continuity',
   'path_speed_ratio',
+  'car_path',
   'input_structure',
   'same_tick_toggle',
   'steer_spikes_per_sec',
@@ -73,6 +75,8 @@ export interface FileContext {
   events: InputEvent[]
   steer: Int8Array | null
   samples: Sample[] | null
+  // CGameArenaPlayer checkpoint records from the record data, null when it did not decode
+  checkpointRecords: ArenaCheckpoint[] | null
   // ticks the input decoder actually read, null without decodable inputs
   decodedTicks: number | null
   // decoder messages, null when that stage decoded or had nothing to decode

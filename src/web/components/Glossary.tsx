@@ -29,7 +29,11 @@ const ENTRIES: [string, string][] = [
   ],
   [
     'checkpoint_consistency',
-    'the split times are stored three times (chunks 00B, 01B, 02B) and the race time twice more. every copy must agree and the last split must equal the race time',
+    'the split times are stored three times (chunks 00B, 01B, 02B) and the race time twice more. every copy must agree, every split comes after the start, the last split equals the race time, and the spawn landmark is none of the split landmarks',
+  ],
+  [
+    'checkpoint_records',
+    'the arena player writes a checkpoint record at the exact ms of every split it drives through. on 2026 builds every split but the finish has one, lists the split without',
   ],
   [
     'sample_input_match',
@@ -42,6 +46,10 @@ const ENTRIES: [string, string][] = [
   [
     'path_speed_ratio',
     'distance the positions cover over the distance the recorded speed allows, whole race. position and speed are written by different parts of the engine, a run reads 1.00. a retimed or injected position stream reads above it, declared respawns exempt their jumps',
+  ],
+  [
+    'car_path',
+    'distance the positions cover inside the race per race second. records sit above 49 m/s, a car that never left the start reads 0, fires below 25',
   ],
   [
     'input_structure',

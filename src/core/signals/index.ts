@@ -18,6 +18,8 @@ import { checkpointConsistency } from './checkpoint-consistency.ts'
 import { sampleInputMatch } from './sample-input-match.ts'
 import { positionContinuity } from './position-continuity.ts'
 import { pathSpeedRatio } from './path-speed-ratio.ts'
+import { carPath } from './car-path.ts'
+import { checkpointRecords } from './checkpoint-records.ts'
 import { inputStructure } from './input-structure.ts'
 import { metadata } from './metadata.ts'
 import { sameTickToggle } from './same-tick-toggle.ts'
@@ -37,9 +39,11 @@ export const DETECTORS: Detector[] = [
   buildChecksum,
   loginAccount,
   checkpointConsistency,
+  checkpointRecords,
   sampleInputMatch,
   positionContinuity,
   pathSpeedRatio,
+  carPath,
   inputStructure,
   sameTickToggle,
   steerSpikes,

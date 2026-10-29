@@ -60,6 +60,15 @@ export const CONTINUITY_SETTLE_MS = 1000
 export const PATH_SPEED_MAX_RATIO = 1.05
 export const PATH_SPEED_MIN_PAIRS = 20
 
+// car_path: distance the positions cover inside the race per race second, 1891 legit records read
+// 49 m/s and up, a car parked at the start reads 0, a 1.5 s finish after 16 m reads 11
+export const CAR_PATH_MIN_MS = 25
+export const CAR_PATH_MIN_SAMPLES = 20
+
+// checkpoint_records: version 11 record data carries an arena checkpoint record at the exact ms of
+// every split but the finish in 773 of 773 legit records, version 10 builds write none
+export const CHECKPOINT_RECORDS_MIN_VERSION = 11
+
 // input_structure: across 1247 records the vehicle state (2) is one contiguous block, the only
 // other full-state kinds are 14 and 15 (before the block or at the finish), and the block starts
 // within the first ticks

@@ -233,13 +233,42 @@ describe('decodeRecordData', () => {
     ])
 
   test('the car is the element at the ghost entity index, not the longest vehicle element', async () => {
-    const byIndex = await decodeRecordData(record(two()), identity, { carIndex: 0 })
+    const byIndex = await decodeRecordData(record(two()), identity, { carIndices: [0] })
     expect(byIndex.samples.map((s) => s.position[0])).toEqual([7, 7])
     expect(byIndex.stateVersion).toBe(33)
-    const heuristic = await decodeRecordData(record(two()), identity, { carIndex: null })
+    const heuristic = await decodeRecordData(record(two()), identity, { carIndices: [] })
     expect(heuristic.samples.map((s) => s.position[0])).toEqual([1, 1, 1])
-    const wrong = await decodeRecordData(record(two()), identity, { carIndex: 2 })
+    const wrong = await decodeRecordData(record(two()), identity, { carIndices: [2] })
     expect(wrong.samples.map((s) => s.position[0])).toEqual([1, 1, 1])
+  })
+
+  test('several entity indices are one car in segments, samples and events joined in time order', async () => {
+    const segments = recordBody(descs, notices, [
+      {
+        desc: 0,
+        samples: [
+          { t: 100, buf: at([2, 0, 0]) },
+          { t: 150, buf: at([2, 0, 0]) },
+        ],
+        events: [{ type: 0, t: 150, data: u32(8) }],
+      },
+      {
+        desc: 0,
+        samples: [{ t: 0, buf: at([1, 0, 0]) }],
+        events: [{ type: 1, t: 20, data: [...u32(7), 1] }],
+      },
+      { desc: 0, samples: [{ t: 0, buf: at([9, 0, 0]) }] },
+    ])
+    const r = await decodeRecordData(record(segments), identity, { carIndices: [1, 0] })
+    expect(r.samples.map((s) => [s.timeMs, s.position[0]])).toEqual([
+      [0, 1],
+      [100, 2],
+      [150, 2],
+    ])
+    expect(r.events.map((e) => [e.timeMs, e.name])).toEqual([
+      [20, 'GlassSmash'],
+      [150, 'TriggeredWaypoint'],
+    ])
   })
 
   test('car events are named through the notice table, other elements events are not car events', async () => {
@@ -252,7 +281,7 @@ describe('decodeRecordData', () => {
         ]),
       ),
       identity,
-      { carIndex: 0 },
+      { carIndices: [0] },
     )
     expect(r.events.map((e) => [e.timeMs, e.localId, e.name])).toEqual([
       [1200, 0, 'GlassSmash'],
@@ -263,7 +292,7 @@ describe('decodeRecordData', () => {
   })
 
   test('arena player checkpoint records carry the exact time, landmark, flags and index', async () => {
-    const r = await decodeRecordData(record(two()), identity, { carIndex: 0 })
+    const r = await decodeRecordData(record(two()), identity, { carIndices: [0] })
     expect(r.checkpoints).toEqual([
       {
         tickMs: 10000,
@@ -294,13 +323,30 @@ describe('decodeRecordData', () => {
         events: [{ type: 2, t: 100, data: ARENA_RECORD(95, 0, 1, 1).slice(0, 30) }],
       },
     ])
-    const r = await decodeRecordData(record(short), identity, { carIndex: null })
+    const r = await decodeRecordData(record(short), identity, { carIndices: [] })
     expect(r.checkpoints[0]!.cpIndex).toBeNull()
     expect(r.samples).toEqual([])
   })
 })
 
 describe('record data on the fixtures', () => {
+  test('kopatych: a transformation map run spans six elements, joined the samples cover the race', async () => {
+    const g = parseGbx(loadCorpusFixture('kopatych')).ghosts[0]!
+    expect(g.entityIndices).toEqual([2, 3, 4, 5, 6, 7])
+    const r = await decodeRecordData(g.recordData!, nodeInflate, { carIndices: g.entityIndices })
+    expect(r.samples.length).toBe(562)
+    expect(r.samples[0]!.timeMs).toBe(0)
+    expect(r.samples.at(-1)!.timeMs).toBe(27650)
+    // each segment sits on its own 50 ms grid, seams and transform ticks are shorter steps
+    const gaps = r.samples.slice(1).map((s, i) => s.timeMs - r.samples[i]!.timeMs)
+    expect(gaps.every((d) => d > 0 && d <= 50)).toBe(true)
+    expect(gaps.filter((d) => d === 50).length / gaps.length).toBeGreaterThan(0.95)
+    const waypoints = r.events.filter((e) => e.name === 'TriggeredWaypoint')
+    expect(waypoints.length).toBe(g.checkpoints.length - 1)
+    expect(r.events.filter((e) => e.name === 'VehicleTransform').length).toBe(10)
+    expect(r.checkpoints.map((c) => c.timeMs)).toEqual(g.checkpoints.map((c) => c.timeMs))
+  })
+
   const ghostOf = (name: Parameters<typeof loadFixture>[0]) =>
     pickGhost(parseGbx(loadFixture(name)))!
 
@@ -308,7 +354,7 @@ describe('record data on the fixtures', () => {
     '%s: the entity index names a vehicle element on the 50 ms grid',
     async (name) => {
       const g = ghostOf(name)
-      const r = await decodeRecordData(g.recordData!, nodeInflate, { carIndex: g.entityIndices[0] })
+      const r = await decodeRecordData(g.recordData!, nodeInflate, { carIndices: g.entityIndices })
       expect(r.samples.length).toBeGreaterThan(100)
       const onGrid = r.samples.filter(
         (s, i) => i === 0 || s.timeMs - r.samples[i - 1]!.timeMs === 50,
@@ -324,7 +370,7 @@ describe('record data on the fixtures', () => {
     '%s: one TriggeredWaypoint per 00B checkpoint, within two ticks after it',
     async (name) => {
       const g = ghostOf(name)
-      const r = await decodeRecordData(g.recordData!, nodeInflate, { carIndex: g.entityIndices[0] })
+      const r = await decodeRecordData(g.recordData!, nodeInflate, { carIndices: g.entityIndices })
       const waypoints = r.events.filter((e) => e.name === 'TriggeredWaypoint').map((e) => e.timeMs)
       expect(waypoints.length).toBeGreaterThanOrEqual(g.checkpoints.length - 1)
       waypoints.forEach((w, i) => {
@@ -340,7 +386,7 @@ describe('record data on the fixtures', () => {
     '%s: arena checkpoint records match 00B in order, the last one flagged',
     async (name) => {
       const g = ghostOf(name)
-      const r = await decodeRecordData(g.recordData!, nodeInflate, { carIndex: g.entityIndices[0] })
+      const r = await decodeRecordData(g.recordData!, nodeInflate, { carIndices: g.entityIndices })
       expect(r.checkpoints.map((c) => c.timeMs)).toEqual(g.checkpoints.map((c) => c.timeMs))
       expect(r.checkpoints.at(-1)!.flags & 1).toBe(1)
       for (const c of r.checkpoints) {
@@ -479,7 +525,7 @@ describe('vehicle state', () => {
 
   test('slidrz: front speed is the logged speed in m/s and velocity tracks the position deltas', async () => {
     const g = parseGhostFixture('slidrz')
-    const r = await decodeRecordData(g.recordData!, nodeInflate, { carIndex: g.entityIndices[0] })
+    const r = await decodeRecordData(g.recordData!, nodeInflate, { carIndices: g.entityIndices })
     expect(r.stateVersion).toBe(33)
     let close = 0
     let tracked = 0

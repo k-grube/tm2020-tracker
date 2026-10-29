@@ -1,6 +1,6 @@
 import { decodeInputStream, steerSeries } from '../inputs/decode.ts'
 import { decodeRecordData } from '../samples/decode.ts'
-import type { Ghost, Inflate, InputEvent, ParsedFile, Sample } from '../model.ts'
+import type { ArenaCheckpoint, Ghost, Inflate, InputEvent, ParsedFile, Sample } from '../model.ts'
 import { KEYBOARD_STEER_VALUES, PAD_MIN_DISTINCT_STEER } from './constants.ts'
 import type { Device, FileContext, LeaderboardEntry } from './types.ts'
 
@@ -69,13 +69,15 @@ export async function buildContext(
     }
   }
   let samples: Sample[] | null = null
+  let checkpointRecords: ArenaCheckpoint[] | null = null
   if (ghost.recordData) {
     try {
       const record = await decodeRecordData(ghost.recordData, inflate, {
-        carIndex: ghost.entityIndices[0] ?? null,
+        carIndices: ghost.entityIndices,
         raceTimeMs: ghost.raceTimeMs,
       })
       samples = record.samples
+      checkpointRecords = record.checkpoints
     } catch (e) {
       samplesError = `record data not decoded: ${message(e)}`
       parsed.warnings.push(samplesError)
@@ -89,6 +91,7 @@ export async function buildContext(
     events,
     steer,
     samples,
+    checkpointRecords,
     decodedTicks,
     inputError,
     samplesError,

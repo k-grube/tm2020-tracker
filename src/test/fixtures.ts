@@ -17,6 +17,14 @@ export const CORPUS_FIXTURES = {
   jdon: 'jdon._(0053742)_lapislazuli.Ghost.Gbx',
   propanoia: 'propanoia_(0057655)_shards-of-eternity.Ghost.Gbx',
   deleteCheatWRs: 'DeleteCheatWRs_(0019869)_fall-2026-01.Ghost.Gbx',
+  // removed record on a car transformation map, the car spans six record data elements
+  kopatych: 'Kopatych.xDD_(0027690)_winter-2024-10.Ghost.Gbx',
+  // removed record whose car never left the start, the finish fired without a drive
+  blackpro: 'Blackpro921OG_(0048142)_summer-2020-19.Ghost.Gbx',
+  // removed record with a checkpoint passed 1.5 s before the start and a 3.6 s race
+  tommac1n0: 'tommac1n0_(0003644)_spring-2026-08.Ghost.Gbx',
+  // removed record that finishes a 7 s map in 1.5 s after 16 m of driving
+  pixeldani: 'PixelDani_(0001477)_training-01.Ghost.Gbx',
 } as const
 
 export type FixtureName = keyof typeof FIXTURES
